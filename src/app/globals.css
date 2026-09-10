@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-obsidian: #050508;
+  --bg-jet: #0a0a12;
+  --neon-violet: #8b5cf6;
+  --neon-cyan: #06b6d4;
+  --terminal-green: #10b981;
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
+  background-color: var(--bg-obsidian);
+  color: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Cyberpunk Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050508;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e1b4b;
+  border-radius: 3px;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #7c3aed;
+  box-shadow: 0 0 10px rgba(124, 58, 237, 0.5);
+}
+
+/* Cyber Isometric Grid Pattern */
+.bg-cyber-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+.bg-cyber-dots {
+  background-size: 24px 24px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 0);
+}
+
+/* Scanlines overlay */
+.scanlines {
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.25) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+}
+
+/* High-End Glassmorphism */
+.glass-panel {
+  background: rgba(10, 10, 18, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-glow-violet {
+  background: rgba(13, 10, 24, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  box-shadow: 0 0 35px -10px rgba(139, 92, 246, 0.15);
+}
+
+.glass-panel-glow-cyan {
+  background: rgba(8, 18, 26, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(6, 182, 212, 0.25);
+  box-shadow: 0 0 35px -10px rgba(6, 182, 212, 0.15);
+}
+
+/* Shimmer Animation Effect */
+@keyframes shimmer-sweep {
+  0% {
+    transform: translateX(-150%);
+  }
+  100% {
+    transform: translateX(150%);
+  }
+}
+
+.shimmer-active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 50%,
+    transparent 100%
+  );
+  animation: shimmer-sweep 2.8s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+/* Selection */
+::selection {
+  background-color: rgba(139, 92, 246, 0.4);
+  color: #ffffff;
+}
