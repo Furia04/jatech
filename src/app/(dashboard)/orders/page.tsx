@@ -36,6 +36,7 @@ import { BudgetCalculator } from '@/components/orders/budget-calculator';
 import { ThermalTicket } from '@/components/orders/thermal-ticket';
 import { DeliveryTicket } from '@/components/orders/delivery-ticket';
 import { PhotoUploader } from '@/components/orders/photo-uploader';
+import { WhatsAppModal, WhatsAppTemplateKey } from '@/components/orders/whatsapp-modal';
 import { fetchServiceOrders, updateServiceOrderStatus, fetchInventory, fetchCurrentShop } from '@/lib/supabase/services';
 import { supabase } from '@/lib/supabase/client';
 
@@ -55,8 +56,9 @@ export default function ServiceOrdersPage() {
   const [activeModalTab, setActiveModalTab] = useState<'details' | 'budget' | 'photos'>('details');
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Estado para Alerta de Notificación por WhatsApp
-  const [whatsappNotifyOrder, setWhatsappNotifyOrder] = useState<ServiceOrder | null>(null);
+  // Estado para Centro de Notificaciones WhatsApp
+  const [whatsappModalOrder, setWhatsappModalOrder] = useState<ServiceOrder | null>(null);
+  const [whatsappDefaultTemplate, setWhatsappDefaultTemplate] = useState<WhatsAppTemplateKey>('listo');
 
   // Cargar órdenes e inventario reales de la base de datos Supabase
   useEffect(() => {
@@ -163,7 +165,8 @@ export default function ServiceOrdersPage() {
 
       // Si cambió el estado a "Para Entregar", sugerir enviar notificación por WhatsApp
       if (statusChangedToReady) {
-        setWhatsappNotifyOrder(updatedOrder);
+        setWhatsappDefaultTemplate('listo');
+        setWhatsappModalOrder(updatedOrder);
       }
     } catch (err: any) {
       console.error('Error al guardar la orden de servicio en Supabase:', err);
@@ -403,27 +406,24 @@ export default function ServiceOrdersPage() {
 
                       {/* Botón WhatsApp Notificar */}
                       {ord.customer_phone && (
-                        ord.status === 'entregado' ? (
-                          <button
-                            onClick={() => setDeliveryTicketOrder(ord)}
-                            className="p-1.5 bg-emerald-900/30 border border-emerald-500/30 hover:bg-emerald-600/30 text-emerald-400 rounded-lg transition-colors inline-flex items-center"
-                            title="Enviar Comprobante de Entrega por WhatsApp"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                          </button>
-                        ) : (
-                          <a
-                            href={`https://wa.me/${ord.customer_phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                              `Hola ${ord.customer_name}, te escribimos de ${shop?.name || 'nuestro taller'} por tu equipo (${ord.device_info}). Puedes consultar el estado actualizado de tu orden ${ord.tracking_code} aquí: ${window.location.origin}/track/${ord.tracking_code.replace('#', '')}`
-                            )}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-1.5 bg-emerald-900/30 border border-emerald-500/30 hover:bg-emerald-600/30 text-emerald-400 rounded-lg transition-colors inline-flex items-center"
-                            title="Enviar Notificación WhatsApp al Cliente"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                          </a>
-                        )
+                        <button
+                          onClick={() => {
+                            const suggestedTemplate: WhatsAppTemplateKey =
+                              ord.status === 'para_entregar'
+                                ? 'listo'
+                                : ord.status === 'en_revision' || ord.status === 'esperando_repuesto'
+                                ? 'presupuesto'
+                                : ord.status === 'abandonado'
+                                ? 'recordatorio'
+                                : 'ingreso';
+                            setWhatsappDefaultTemplate(suggestedTemplate);
+                            setWhatsappModalOrder(ord);
+                          }}
+                          className="p-1.5 bg-emerald-900/30 border border-emerald-500/30 hover:bg-emerald-600/30 text-emerald-400 rounded-lg transition-colors inline-flex items-center cursor-pointer"
+                          title="Enviar Notificación WhatsApp con Plantillas"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -447,12 +447,34 @@ export default function ServiceOrdersPage() {
                   Orden <span className="font-mono text-primary">{editingOrder.tracking_code}</span>
                 </h3>
               </div>
-              <button
-                onClick={() => setEditingOrder(null)}
-                className="p-1 hover:bg-surface-container-highest rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-on-surface-variant" />
-              </button>
+              <div className="flex items-center gap-2">
+                {editingOrder.customer_phone && (
+                  <button
+                    onClick={() => {
+                      const suggestedTemplate: WhatsAppTemplateKey =
+                        editingOrder.status === 'para_entregar'
+                          ? 'listo'
+                          : editingOrder.status === 'en_revision' || editingOrder.status === 'esperando_repuesto'
+                          ? 'presupuesto'
+                          : editingOrder.status === 'abandonado'
+                          ? 'recordatorio'
+                          : 'ingreso';
+                      setWhatsappDefaultTemplate(suggestedTemplate);
+                      setWhatsappModalOrder(editingOrder);
+                    }}
+                    className="px-3 py-1.5 bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-emerald-400 rounded-xl font-mono text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                    title="Enviar Notificación WhatsApp al Cliente"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" /> Notificar WA
+                  </button>
+                )}
+                <button
+                  onClick={() => setEditingOrder(null)}
+                  className="p-1 hover:bg-surface-container-highest rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-on-surface-variant" />
+                </button>
+              </div>
             </div>
 
             {/* Pestañas del Modal */}
@@ -767,50 +789,14 @@ export default function ServiceOrdersPage() {
         />
       )}
 
-      {/* POPUP DE NOTIFICACIÓN WHATSAPP AL CAMBIAR ESTADO A "PARA ENTREGAR" */}
-      {whatsappNotifyOrder && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-surface-container border border-emerald-500/40 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl text-center animate-in zoom-in-95">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30">
-              <Send className="w-7 h-7" />
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="font-title-sm text-lg font-bold text-on-surface">
-                ¡Equipo Listo para Retirar!
-              </h3>
-              <p className="text-xs text-on-surface-variant">
-                ¿Deseas enviar un aviso por WhatsApp a <strong className="text-on-surface">{whatsappNotifyOrder.customer_name}</strong> para que pase a retirar su equipo?
-              </p>
-            </div>
-
-            <div className="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/60 text-left font-mono text-xs text-on-surface-variant">
-              <div><strong>Orden:</strong> {whatsappNotifyOrder.tracking_code}</div>
-              <div><strong>Equipo:</strong> {whatsappNotifyOrder.device_info}</div>
-              <div><strong>Tel:</strong> {whatsappNotifyOrder.customer_phone || 'Sin número'}</div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setWhatsappNotifyOrder(null)}
-                className="flex-1 bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant text-on-surface font-title-sm text-xs font-bold py-2.5 rounded-xl"
-              >
-                Omitir
-              </button>
-              <a
-                href={`https://wa.me/${(whatsappNotifyOrder.customer_phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                  `¡Hola ${whatsappNotifyOrder.customer_name}! Te informamos desde el taller que tu equipo (${whatsappNotifyOrder.device_info}) ya se encuentra LISTO PARA RETIRAR 🎉. Código de Orden: ${whatsappNotifyOrder.tracking_code}. Puedes verificar el detalle aquí: ${window.location.origin}/track/${whatsappNotifyOrder.tracking_code.replace('#', '')}`
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setWhatsappNotifyOrder(null)}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-title-sm text-xs font-bold py-2.5 rounded-xl shadow flex items-center justify-center gap-2"
-              >
-                <MessageSquare className="w-4 h-4" /> Enviar WhatsApp
-              </a>
-            </div>
-          </div>
-        </div>
+      {/* CENTRO DE NOTIFICACIONES WHATSAPP CON PLANTILLAS DINÁMICAS */}
+      {whatsappModalOrder && (
+        <WhatsAppModal
+          order={whatsappModalOrder}
+          shop={shop}
+          defaultTemplate={whatsappDefaultTemplate}
+          onClose={() => setWhatsappModalOrder(null)}
+        />
       )}
     </div>
   );

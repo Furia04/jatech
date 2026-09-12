@@ -17,25 +17,31 @@ import {
   MessageSquare,
   ShieldAlert,
 } from 'lucide-react';
-import { UserProfile, ServiceOrder, OrderStatus } from '@/types';
+import { UserProfile, ServiceOrder, OrderStatus, Shop } from '@/types';
 import { hasFinancialAccess } from '@/lib/permissions';
-import { fetchServiceOrders, getCurrentUserProfile, updateServiceOrderStatus } from '@/lib/supabase/services';
+import { fetchServiceOrders, getCurrentUserProfile, updateServiceOrderStatus, fetchCurrentShop } from '@/lib/supabase/services';
+import { WhatsAppModal, WhatsAppTemplateKey } from '@/components/orders/whatsapp-modal';
 
 export default function DashboardPage() {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [shop, setShop] = useState<Shop | null>(null);
   const [loading, setLoading] = useState(true);
+  const [whatsappModalOrder, setWhatsappModalOrder] = useState<ServiceOrder | null>(null);
+  const [whatsappTemplate, setWhatsappTemplate] = useState<WhatsAppTemplateKey>('recordatorio');
 
   useEffect(() => {
     async function loadDashboardData() {
       setLoading(true);
       try {
-        const [profile, realOrders] = await Promise.all([
+        const [profile, realOrders, realShop] = await Promise.all([
           getCurrentUserProfile(),
           fetchServiceOrders(),
+          fetchCurrentShop(),
         ]);
         setUserProfile(profile);
         setOrders(realOrders || []);
+        setShop(realShop);
       } catch (err) {
         console.error('Error al cargar datos del panel:', err);
       } finally {
@@ -252,18 +258,19 @@ export default function DashboardPage() {
                       </div>
 
                       <div className="flex items-center gap-2 self-end sm:self-auto">
-                        <a
-                          href={`https://wa.me/${(ord.customer_phone || '').replace(/[^0-9]/g, '')}?text=Hola%20${encodeURIComponent(ord.customer_name || '')},%20te%20escribimos%20por%20tu%20${encodeURIComponent(ord.device_info || '')}%20(Orden%20${ord.tracking_code}).%20Lleva%20más%20de%2030%20días%20en%20taller.`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30 px-3 py-1 rounded font-bold transition-colors text-[11px] flex items-center gap-1"
+                        <button
+                          onClick={() => {
+                            setWhatsappTemplate('recordatorio');
+                            setWhatsappModalOrder(ord);
+                          }}
+                          className="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30 px-3 py-1 rounded font-bold transition-colors text-[11px] flex items-center gap-1 cursor-pointer"
                         >
                           <MessageSquare className="w-3.5 h-3.5" /> Reclamar vía WA
-                        </a>
+                        </button>
 
                         <button
                           onClick={() => handleMarkAsAbandoned(ord.id)}
-                          className="bg-error/20 text-error hover:bg-error/30 border border-error/30 px-3 py-1 rounded font-bold transition-colors text-[11px]"
+                          className="bg-error/20 text-error hover:bg-error/30 border border-error/30 px-3 py-1 rounded font-bold transition-colors text-[11px] cursor-pointer"
                         >
                           Marcar Abandonado
                         </button>
@@ -366,6 +373,16 @@ export default function DashboardPage() {
             )}
           </div>
         </>
+      )}
+
+      {/* CENTRO DE NOTIFICACIONES WHATSAPP */}
+      {whatsappModalOrder && (
+        <WhatsAppModal
+          order={whatsappModalOrder}
+          shop={shop}
+          defaultTemplate={whatsappTemplate}
+          onClose={() => setWhatsappModalOrder(null)}
+        />
       )}
     </div>
   );

@@ -17,14 +17,17 @@ import {
   CreditCard,
   Camera,
   Wallet,
+  MessageSquare,
 } from 'lucide-react';
 import { createServiceOrderWithDevice, getCurrentUserProfile } from '@/lib/supabase/services';
 import { supabase } from '@/lib/supabase/client';
-import { CustomFieldDefinition, DeviceCategoryTemplate, ServiceOrder } from '@/types';
+import { CustomFieldDefinition, DeviceCategoryTemplate, ServiceOrder, Shop } from '@/types';
 import { CustomFieldsRenderer } from '@/components/orders/custom-fields-renderer';
 import { PatternLockInput } from '@/components/orders/pattern-lock-input';
 import { DeviceAutocomplete } from '@/components/orders/device-autocomplete';
 import { PhotoUploader } from '@/components/orders/photo-uploader';
+import { WhatsAppModal } from '@/components/orders/whatsapp-modal';
+import { fetchCurrentShop } from '@/lib/supabase/services';
 
 const DEFAULT_TEMPLATES: DeviceCategoryTemplate[] = [
   {
@@ -97,14 +100,23 @@ export default function NewOrderIntakePage() {
   const [ticketCode] = useState(`WO-${Math.floor(1000 + Math.random() * 9000)}`);
   const [todayDate] = useState(new Date().toLocaleDateString('es-AR'));
 
+  const [createdOrderForWhatsApp, setCreatedOrderForWhatsApp] = useState<ServiceOrder | null>(null);
+  const [currentShop, setCurrentShop] = useState<Shop | null>(null);
+
   const numEstimatedCost = Number(estimatedCost) || 0;
   const numAdvancePayment = Number(advancePayment) || 0;
   const remainingBalance = Math.max(0, numEstimatedCost - numAdvancePayment);
 
   useEffect(() => {
-    async function loadTemplates() {
+    async function loadShopAndTemplates() {
       try {
-        const profile = await getCurrentUserProfile();
+        const [profile, realShop] = await Promise.all([
+          getCurrentUserProfile(),
+          fetchCurrentShop(),
+        ]);
+        if (realShop) {
+          setCurrentShop(realShop);
+        }
         if (profile) {
           const targetShopId = profile.shop_id || profile.id;
           const { data: dbShop } = await supabase
@@ -121,7 +133,7 @@ export default function NewOrderIntakePage() {
         console.warn('Plantillas por defecto cargadas');
       }
     }
-    loadTemplates();
+    loadShopAndTemplates();
   }, []);
 
   const activeTemplate = categoryTemplates.find(
@@ -244,6 +256,104 @@ export default function NewOrderIntakePage() {
       setTimeout(() => {
         router.push('/orders');
       }, 800);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveAndWhatsApp = async () => {
+    if (!validateForm()) return;
+
+    setSaving(true);
+    setSuccessMessage('');
+
+    const newOrderPayload = {
+      customer: {
+        full_name: customerName.trim(),
+        phone: customerPhone.trim(),
+        document_id: customerDocumentId.trim(),
+        email: customerEmail.trim(),
+      },
+      device: {
+        type: deviceType,
+        brand: deviceBrand.trim(),
+        model: deviceModel.trim(),
+        serial_imei: serialImei.trim() || undefined,
+        powers_on: powersOn,
+        custom_attributes: { unlock_pattern: unlockPattern, ...customAttrValues },
+      },
+      order: {
+        reported_fault: faultDescription.trim(),
+        estimated_cost: numEstimatedCost,
+        advance_payment: numAdvancePayment,
+        payment_method: paymentMethod,
+        device_photos: devicePhotos,
+        tracking_code: `#${ticketCode}`,
+      },
+    };
+
+    try {
+      const savedOrder = await createServiceOrderWithDevice(newOrderPayload);
+      const localOrderObj: ServiceOrder = {
+        id: savedOrder?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '00000000-0000-4000-8000-' + String(Date.now()).padStart(12, '0')),
+        shop_id: savedOrder?.shop_id || 'local-shop',
+        tracking_code: `#${ticketCode}`,
+        device_id: savedOrder?.device_id || `dev-${Date.now()}`,
+        customer_id: savedOrder?.customer_id || `cust-${Date.now()}`,
+        customer_name: customerName.trim(),
+        customer_phone: customerPhone.trim(),
+        customer_document_id: customerDocumentId.trim(),
+        device_info: `${deviceType} · ${deviceBrand.trim()} ${deviceModel.trim()}`,
+        status: 'recibido',
+        reported_fault: faultDescription.trim(),
+        estimated_cost: numEstimatedCost,
+        final_price: numEstimatedCost,
+        advance_payment: numAdvancePayment,
+        payment_method: paymentMethod,
+        device_photos: devicePhotos,
+        created_at: savedOrder?.created_at || new Date().toISOString(),
+        custom_attributes: { unlock_pattern: unlockPattern, ...customAttrValues },
+      };
+
+      try {
+        const storedStr = localStorage.getItem('prorepair_local_orders');
+        const existing = storedStr ? JSON.parse(storedStr) : [];
+        const filtered = existing.filter((o: any) => o.tracking_code !== `#${ticketCode}` && o.id !== localOrderObj.id);
+        localStorage.setItem('prorepair_local_orders', JSON.stringify([localOrderObj, ...filtered]));
+      } catch (e) {}
+
+      setSuccessMessage('¡Orden registrada exitosamente! Preparando notificación de WhatsApp...');
+      setCreatedOrderForWhatsApp(localOrderObj);
+    } catch (err) {
+      console.warn('Guardado local de emergencia realizado:', err);
+      const localOrderObj: ServiceOrder = {
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '00000000-0000-4000-8000-' + String(Date.now()).padStart(12, '0'),
+        shop_id: 'local-shop',
+        tracking_code: `#${ticketCode}`,
+        device_id: `dev-${Date.now()}`,
+        customer_id: `cust-${Date.now()}`,
+        customer_name: customerName.trim(),
+        customer_phone: customerPhone.trim(),
+        customer_document_id: customerDocumentId.trim(),
+        device_info: `${deviceType} · ${deviceBrand.trim()} ${deviceModel.trim()}`,
+        status: 'recibido',
+        reported_fault: faultDescription.trim(),
+        estimated_cost: numEstimatedCost,
+        final_price: numEstimatedCost,
+        advance_payment: numAdvancePayment,
+        payment_method: paymentMethod,
+        device_photos: devicePhotos,
+        created_at: new Date().toISOString(),
+        custom_attributes: { unlock_pattern: unlockPattern, ...customAttrValues },
+      };
+
+      try {
+        const storedStr = localStorage.getItem('prorepair_local_orders');
+        const existing = storedStr ? JSON.parse(storedStr) : [];
+        localStorage.setItem('prorepair_local_orders', JSON.stringify([localOrderObj, ...existing]));
+      } catch (e) {}
+
+      setCreatedOrderForWhatsApp(localOrderObj);
     } finally {
       setSaving(false);
     }
@@ -389,6 +499,16 @@ export default function NewOrderIntakePage() {
           >
             <FileText className="w-4 h-4" />
             {saving ? 'Guardando...' : 'Imprimir Hoja A4 & Guardar'}
+          </button>
+
+          {/* Botón 4: Guardar & Enviar WhatsApp */}
+          <button
+            onClick={handleSaveAndWhatsApp}
+            disabled={saving}
+            className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white font-title-sm text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 disabled:opacity-50"
+          >
+            <MessageSquare className="w-4 h-4" />
+            {saving ? 'Guardando...' : 'Guardar & WhatsApp'}
           </button>
         </div>
       </div>
@@ -980,6 +1100,19 @@ export default function NewOrderIntakePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL DE NOTIFICACIÓN WHATSAPP AL CREAR LA ORDEN */}
+      {createdOrderForWhatsApp && (
+        <WhatsAppModal
+          order={createdOrderForWhatsApp}
+          shop={currentShop}
+          defaultTemplate="ingreso"
+          onClose={() => {
+            setCreatedOrderForWhatsApp(null);
+            router.push('/orders');
+          }}
+        />
       )}
     </div>
   );
