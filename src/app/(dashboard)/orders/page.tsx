@@ -718,6 +718,7 @@ export default function ServiceOrdersPage() {
               </div>
             ) : (
               <BudgetCalculator
+                order={editingOrder}
                 inventory={inventory}
                 onApplyBudget={(cost, price) => {
                   setEditingOrder({

@@ -83,6 +83,7 @@ export interface ServiceOrder {
   warranty_period?: string;
   warranty_until?: string;
   delivered_at?: string;
+  updated_at?: string;
   created_at: string;
   // Joins para frontend
   customer_name?: string;

@@ -33,6 +33,8 @@ import {
 } from 'lucide-react';
 import { InventoryItem, OrderStatus, ServiceOrder, UserProfile } from '@/types';
 import { BudgetCalculator } from '@/components/orders/budget-calculator';
+import { WhatsAppModal } from '@/components/orders/whatsapp-modal';
+import { CashRegisterModal } from '@/components/dashboard/cash-register-modal';
 
 const DEMO_USER: UserProfile = {
   id: 'user-demo-001',
@@ -116,6 +118,8 @@ export default function InteractiveDemoPage() {
   const [editingOrder, setEditingOrder] = useState<ServiceOrder | null>(null);
   const [activeModalTab, setActiveModalTab] = useState<'details' | 'budget'>('details');
   const [copiedLink, setCopiedLink] = useState(false);
+  const [whatsappOrder, setWhatsappOrder] = useState<ServiceOrder | null>(null);
+  const [showCashRegister, setShowCashRegister] = useState(false);
 
   // Estado para Nueva Orden Rápida en el Demo
   const [newCustName, setNewCustName] = useState('');
@@ -288,6 +292,12 @@ export default function InteractiveDemoPage() {
           >
             <Package className="w-4 h-4" /> Inventario ({demoInventory.length})
           </button>
+          <button
+            onClick={() => setShowCashRegister(true)}
+            className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30 shadow-sm"
+          >
+            <DollarSign className="w-4 h-4" /> Cierre de Caja
+          </button>
         </div>
       </header>
 
@@ -375,16 +385,29 @@ export default function InteractiveDemoPage() {
                         <td className="p-3">{getStatusBadge(ord.status)}</td>
                         <td className="p-3 text-right font-bold">${ord.final_price?.toFixed(2)}</td>
                         <td className="p-3 text-right">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingOrder(ord);
-                              setActiveModalTab('details');
-                            }}
-                            className="p-1.5 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setWhatsappOrder(ord);
+                              }}
+                              className="p-1.5 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30 transition-colors cursor-pointer"
+                              title="Notificar por WhatsApp"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingOrder(ord);
+                                setActiveModalTab('details');
+                              }}
+                              className="p-1.5 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+                              title="Editar Orden / Presupuestar"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -665,6 +688,43 @@ export default function InteractiveDemoPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL DE WHATSAPP EN DEMO */}
+      {whatsappOrder && (
+        <WhatsAppModal
+          order={whatsappOrder}
+          shop={{
+            id: 'shop-demo-sandbox',
+            name: 'JaTech Demo Lab',
+            owner_email: 'demo@taller.com',
+            subscription_status: 'active',
+            settings: {
+              phone: '+5491100001111',
+            },
+            created_at: new Date().toISOString(),
+          }}
+          onClose={() => setWhatsappOrder(null)}
+        />
+      )}
+
+      {/* MODAL DE CIERRE DE CAJA EN DEMO */}
+      {showCashRegister && (
+        <CashRegisterModal
+          isOpen={showCashRegister}
+          onClose={() => setShowCashRegister(false)}
+          orders={demoOrders}
+          shop={{
+            id: 'shop-demo-sandbox',
+            name: 'JaTech Demo Lab',
+            owner_email: 'demo@taller.com',
+            subscription_status: 'active',
+            settings: {
+              phone: '+5491100001111',
+            },
+            created_at: new Date().toISOString(),
+          }}
+        />
       )}
     </div>
   );

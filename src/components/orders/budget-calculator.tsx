@@ -95,6 +95,8 @@ export function BudgetCalculator({
     loadSpares();
   }, [order?.id]);
 
+  const [errorMsg, setErrorMsg] = useState<string>('');
+
   const totalPartsCost = items.reduce(
     (sum, item) => sum + item.unit_cost * item.quantity,
     0
@@ -108,10 +110,16 @@ export function BudgetCalculator({
   const finalPrice = Math.max(0, subtotal - discount);
 
   const handleAddInventoryItem = async () => {
+    setErrorMsg('');
     if (!selectedInventoryId) return;
 
     const invItem = inventoryList.find((i) => i.id === selectedInventoryId);
     if (!invItem) return;
+
+    if (invItem.stock <= 0) {
+      setErrorMsg(`El repuesto "${invItem.name}" no tiene unidades disponibles en stock.`);
+      return;
+    }
 
     setAssigningSpare(true);
     try {
@@ -150,8 +158,9 @@ export function BudgetCalculator({
         setItems((prev) => [...prev, newItem]);
       }
       setSelectedInventoryId('');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error al asignar repuesto:', err);
+      setErrorMsg(err.message || 'Error al asignar repuesto.');
     } finally {
       setAssigningSpare(false);
     }
@@ -231,25 +240,48 @@ export function BudgetCalculator({
         <label className="block font-bold text-on-surface-variant uppercase text-[11px]">
           1. Agregar Repuesto de Inventario (Descuenta Stock Automáticamente)
         </label>
+        
+        {errorMsg && (
+          <div className="p-3 bg-error/10 border border-error/30 rounded-lg text-error text-xs flex items-center gap-2">
+            <span className="font-bold">¡Atención!</span> {errorMsg}
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-3">
           <select
             value={selectedInventoryId}
-            onChange={(e) => setSelectedInventoryId(e.target.value)}
+            onChange={(e) => {
+              setSelectedInventoryId(e.target.value);
+              setErrorMsg('');
+            }}
             className="flex-1 bg-surface-container border border-outline-variant rounded-xl p-2.5 text-xs text-on-surface"
           >
             <option value="">-- Seleccionar repuesto de inventario --</option>
-            {inventoryList.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name} ({item.category}) — Stock: {item.stock} u. — Venta: ${item.price.toLocaleString('es-AR')}
-              </option>
-            ))}
+            {inventoryList.map((item) => {
+              const isOutOfStock = (item.stock || 0) <= 0;
+              const isLowStock = !isOutOfStock && (item.stock || 0) <= (item.min_stock || 2);
+              
+              const stockLabel = isOutOfStock
+                ? `[AGOTADO - 0 u.]`
+                : isLowStock
+                ? `⚠️ POCO STOCK (${item.stock} u.)`
+                : `Stock: ${item.stock} u.`;
+
+              return (
+                <option key={item.id} value={item.id} disabled={isOutOfStock}>
+                  {item.name} ({item.category}) — {stockLabel} — Venta: ${item.price.toLocaleString('es-AR')}
+                </option>
+              );
+            })}
           </select>
           <button
             type="button"
+            disabled={assigningSpare}
             onClick={handleAddInventoryItem}
-            className="bg-primary text-on-primary font-bold px-4 py-2.5 rounded-xl shadow flex items-center justify-center gap-1.5"
+            className="bg-primary text-on-primary font-bold px-4 py-2.5 rounded-xl shadow flex items-center justify-center gap-1.5 disabled:opacity-50 hover:bg-primary-container transition-all"
           >
-            <Plus className="w-4 h-4" /> Agregar Repuesto
+            {assigningSpare ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            <span>Agregar Repuesto</span>
           </button>
         </div>
       </div>

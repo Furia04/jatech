@@ -21,6 +21,7 @@ import { UserProfile, ServiceOrder, OrderStatus, Shop } from '@/types';
 import { hasFinancialAccess } from '@/lib/permissions';
 import { fetchServiceOrders, getCurrentUserProfile, updateServiceOrderStatus, fetchCurrentShop } from '@/lib/supabase/services';
 import { WhatsAppModal, WhatsAppTemplateKey } from '@/components/orders/whatsapp-modal';
+import { CashRegisterModal } from '@/components/dashboard/cash-register-modal';
 
 export default function DashboardPage() {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
@@ -29,6 +30,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [whatsappModalOrder, setWhatsappModalOrder] = useState<ServiceOrder | null>(null);
   const [whatsappTemplate, setWhatsappTemplate] = useState<WhatsAppTemplateKey>('recordatorio');
+  const [showCashRegister, setShowCashRegister] = useState(false);
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -110,7 +112,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Encabezado */}
-      <div className="flex justify-between items-end border-b border-outline-variant/60 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-outline-variant/60 pb-4 gap-3">
         <div>
           <h2 className="font-display-lg text-display-lg text-on-surface">
             Panel Principal del Taller
@@ -119,6 +121,16 @@ export default function DashboardPage() {
             Resumen técnico y operativo del taller en tiempo real.
           </p>
         </div>
+
+        {canSeeMoney && (
+          <button
+            onClick={() => setShowCashRegister(true)}
+            className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+          >
+            <DollarSign className="w-4 h-4" />
+            <span>Arqueo / Cierre de Caja</span>
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -382,6 +394,16 @@ export default function DashboardPage() {
           shop={shop}
           defaultTemplate={whatsappTemplate}
           onClose={() => setWhatsappModalOrder(null)}
+        />
+      )}
+
+      {/* MODAL DE CIERRE DE CAJA / ARQUEO */}
+      {showCashRegister && (
+        <CashRegisterModal
+          isOpen={showCashRegister}
+          onClose={() => setShowCashRegister(false)}
+          orders={orders}
+          shop={shop}
         />
       )}
     </div>

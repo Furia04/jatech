@@ -1,10 +1,10 @@
-'use client';
-
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Menu, LogOut, Loader2 } from 'lucide-react';
-import { UserProfile } from '@/types';
+import { Search, Menu, LogOut, Loader2, DollarSign } from 'lucide-react';
+import { UserProfile, ServiceOrder, Shop } from '@/types';
 import { supabase } from '@/lib/supabase/client';
+import { fetchServiceOrders, fetchCurrentShop } from '@/lib/supabase/services';
+import { CashRegisterModal } from '@/components/dashboard/cash-register-modal';
 
 interface HeaderProps {
   user: UserProfile;
@@ -14,6 +14,27 @@ interface HeaderProps {
 export function Header({ user, onToggleSidebar }: HeaderProps) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [showCashRegister, setShowCashRegister] = useState(false);
+  const [cashOrders, setCashOrders] = useState<ServiceOrder[]>([]);
+  const [cashShop, setCashShop] = useState<Shop | null>(null);
+  const [loadingCash, setLoadingCash] = useState(false);
+
+  const handleOpenCashRegister = async () => {
+    setLoadingCash(true);
+    setShowCashRegister(true);
+    try {
+      const [orders, shop] = await Promise.all([
+        fetchServiceOrders(),
+        fetchCurrentShop(),
+      ]);
+      setCashOrders(orders || []);
+      setCashShop(shop);
+    } catch (err) {
+      console.error('Error al abrir arqueo de caja:', err);
+    } finally {
+      setLoadingCash(false);
+    }
+  };
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -57,6 +78,16 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
 
       {/* Acciones del Header */}
       <div className="flex items-center gap-3">
+        {/* Botón Cierre de Caja / Arqueo */}
+        <button
+          onClick={handleOpenCashRegister}
+          className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
+          title="Abrir Arqueo y Cierre de Caja del Día"
+        >
+          {loadingCash ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <DollarSign className="w-3.5 h-3.5" />}
+          <span>Cierre de Caja</span>
+        </button>
+
         {/* Botón Cerrar Sesión Real */}
         <button
           onClick={handleLogout}
@@ -72,6 +103,15 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
           <span className="hidden md:inline">{loggingOut ? 'Cerrando...' : 'Salir'}</span>
         </button>
       </div>
+
+      {/* MODAL DE CIERRE DE CAJA */}
+      {showCashRegister && (
+        <CashRegisterModal
+          orders={cashOrders}
+          shop={cashShop}
+          onClose={() => setShowCashRegister(false)}
+        />
+      )}
     </header>
   );
 }
