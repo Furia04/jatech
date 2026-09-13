@@ -11,6 +11,10 @@ import {
   CheckCircle2,
   Clock,
   ThumbsUp,
+  Megaphone,
+  Wifi,
+  Briefcase,
+  Layers,
 } from "lucide-react";
 import { CoreMode } from "@/types";
 import { cn } from "@/lib/utils";
@@ -25,6 +29,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   setActiveCore,
 }) => {
   const isHw = activeCore === "hardware";
+  const isSw = activeCore === "software";
+  const isSol = activeCore === "solutions";
 
   const coreData = {
     hardware: {
@@ -50,38 +56,59 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     },
     software: {
       badge: "CRECIMIENTO DIGITAL PARA TU NEGOCIO",
-      titlePrefix: "Software, Web y",
-      titleHighlight: "Marketing Digital",
+      titlePrefix: "Landing Pages y",
+      titleHighlight: "Software a Medida",
       subtitle:
-        "Diseñamos páginas web que convierten, desarrollamos software a medida según tus necesidades y gestionamos campañas de marketing digital (Meta y Google Ads) para atraer más clientes.",
+        "Diseñamos páginas web que convierten visitas en clientes y desarrollamos software personalizado según tus necesidades. Sitios rápidos, atractivos y fáciles de usar desde cualquier celular.",
       tags: [
-        "Páginas Web de Alta Conversión",
-        "Campañas de Google & Meta Ads",
-        "Software a Medida de tu Negocio",
-        "Estrategias de Crecimiento",
+        "Páginas Web que Venden",
+        "Diseño Adaptado a Celulares",
+        "Sistemas a Medida de tu Negocio",
+        "Soporte y Mantenimiento",
       ],
       highlights: [
-        { icon: Zap, title: "Más Ventas", desc: "Publicidad y webs diseñadas para vender" },
-        { icon: CheckCircle2, title: "Fácil de Administrar", desc: "Sistemas simples sin complicaciones" },
-        { icon: Globe, title: "Presencia Digital", desc: "Posicionamiento en Google y redes" },
+        { icon: Zap, title: "Más Ventas", desc: "Diseño enfocado en captar clientes" },
+        { icon: CheckCircle2, title: "Fácil de Administrar", desc: "Sin complicaciones técnicas" },
+        { icon: Globe, title: "100% Personalizado", desc: "Hecho a la medida de tu negocio" },
       ],
-      ctaPrimary: "Pedir Presupuesto Digital",
-      ctaSecondary: "Ver Servicios",
-      primaryLink: "https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quiero%20cotizar%20un%20proyecto%20web%2C%20software%20o%20marketing%20digital.",
+      ctaPrimary: "Pedir Presupuesto Web",
+      ctaSecondary: "Ver Diseños",
+      primaryLink: "https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quiero%20cotizar%20una%20landing%20page%20o%20desarrollo%20de%20software.",
+    },
+    solutions: {
+      badge: "IMPULSO Y CONECTIVIDAD PARA TU NEGOCIO",
+      titlePrefix: "Marketing Digital, Redes y",
+      titleHighlight: "Soporte para PyMEs",
+      subtitle:
+        "Atraé más clientes con publicidad en Meta y Google Ads, optimizá tu conexión Wi-Fi sin cortes y asegurá tus archivos con soporte informático continuo para tu comercio o empresa.",
+      tags: [
+        "Publicidad en Instagram & Google Ads",
+        "Redes e Internet Wi-Fi sin Cortes",
+        "Soporte Continuo para Comercios",
+        "Copias de Seguridad y Respaldo",
+      ],
+      highlights: [
+        { icon: Megaphone, title: "Publicidad Online", desc: "Campañas en Meta y Google que atraen ventas" },
+        { icon: Wifi, title: "Wi-Fi Estable", desc: "Redes y cableado sin caídas ni lentitud" },
+        { icon: Briefcase, title: "Soporte para Empresas", desc: "Tranquilidad y respaldo para tus archivos" },
+      ],
+      ctaPrimary: "Consultar por Servicios",
+      ctaSecondary: "Ver Todos los Servicios",
+      primaryLink: "https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20asesoramiento%20sobre%20Marketing%2C%20Redes%20o%20Soporte%20PyME.",
     },
   };
 
-  const current = isHw ? coreData.hardware : coreData.software;
+  const current = coreData[activeCore];
 
   return (
     <section className="relative min-h-[85vh] pt-28 pb-16 flex flex-col justify-center items-center px-4 sm:px-6">
-      {/* Selector: Servicio Técnico e Impresiones 3D vs Software & Marketing Digital */}
-      <div className="mb-8">
+      {/* Selector: 3 Secciones de Servicios */}
+      <div className="mb-8 max-w-full overflow-x-auto pb-1">
         <div className="p-1 rounded-2xl bg-[#0d0d1a] border border-white/10 flex flex-col sm:flex-row items-center gap-1">
           <button
             onClick={() => setActiveCore("hardware")}
             className={cn(
-              "px-5 py-2.5 rounded-xl font-mono text-xs sm:text-sm font-bold tracking-wide transition-colors flex items-center gap-2 min-h-[44px] w-full sm:w-auto justify-center",
+              "px-4 sm:px-5 py-2.5 rounded-xl font-mono text-xs sm:text-sm font-bold tracking-wide transition-colors flex items-center gap-2 min-h-[44px] w-full sm:w-auto justify-center",
               isHw
                 ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
                 : "text-slate-400 hover:text-slate-200"
@@ -94,14 +121,27 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <button
             onClick={() => setActiveCore("software")}
             className={cn(
-              "px-5 py-2.5 rounded-xl font-mono text-xs sm:text-sm font-bold tracking-wide transition-colors flex items-center gap-2 min-h-[44px] w-full sm:w-auto justify-center",
-              !isHw
+              "px-4 sm:px-5 py-2.5 rounded-xl font-mono text-xs sm:text-sm font-bold tracking-wide transition-colors flex items-center gap-2 min-h-[44px] w-full sm:w-auto justify-center",
+              isSw
                 ? "bg-violet-500/20 text-violet-300 border border-violet-500/40"
                 : "text-slate-400 hover:text-slate-200"
             )}
           >
             <Globe className="w-4 h-4 text-violet-400" />
-            <span>Software, Web & Marketing Digital</span>
+            <span>Landing Pages y Software a Medida</span>
+          </button>
+
+          <button
+            onClick={() => setActiveCore("solutions")}
+            className={cn(
+              "px-4 sm:px-5 py-2.5 rounded-xl font-mono text-xs sm:text-sm font-bold tracking-wide transition-colors flex items-center gap-2 min-h-[44px] w-full sm:w-auto justify-center",
+              isSol
+                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            <Megaphone className="w-4 h-4 text-emerald-400" />
+            <span>Marketing, Redes y Soporte PyMEs</span>
           </button>
         </div>
       </div>
@@ -123,13 +163,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 "inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono uppercase tracking-wider border",
                 isHw
                   ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
-                  : "bg-violet-500/10 border-violet-500/30 text-violet-300"
+                  : isSw
+                  ? "bg-violet-500/10 border-violet-500/30 text-violet-300"
+                  : "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
               )}
             >
               <span
                 className={cn(
                   "w-1.5 h-1.5 rounded-full",
-                  isHw ? "bg-cyan-400" : "bg-violet-400"
+                  isHw ? "bg-cyan-400" : isSw ? "bg-violet-400" : "bg-emerald-400"
                 )}
               />
               {current.badge}
@@ -144,7 +186,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 "bg-clip-text text-transparent bg-gradient-to-r",
                 isHw
                   ? "from-cyan-400 via-sky-300 to-blue-400"
-                  : "from-violet-400 via-purple-300 to-cyan-400"
+                  : isSw
+                  ? "from-violet-400 via-purple-300 to-cyan-400"
+                  : "from-emerald-400 via-teal-300 to-cyan-400"
               )}
             >
               {current.titleHighlight}
@@ -166,7 +210,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <span
                   className={cn(
                     "w-1.5 h-1.5 rounded-full",
-                    isHw ? "bg-cyan-400" : "bg-violet-400"
+                    isHw ? "bg-cyan-400" : isSw ? "bg-violet-400" : "bg-emerald-400"
                   )}
                 />
                 {tag}
@@ -184,7 +228,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 "w-full sm:w-auto px-7 py-3.5 rounded-xl text-sm sm:text-base font-bold text-white transition-transform flex items-center justify-center gap-2.5 shadow-md",
                 isHw
                   ? "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500"
-                  : "bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500",
+                  : isSw
+                  ? "bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500"
+                  : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500",
                 "min-h-[48px] active:scale-[0.98]"
               )}
             >
@@ -212,7 +258,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   <div
                     className={cn(
                       "p-2 rounded-lg shrink-0",
-                      isHw ? "bg-cyan-500/10 text-cyan-400" : "bg-violet-500/10 text-violet-400"
+                      isHw
+                        ? "bg-cyan-500/10 text-cyan-400"
+                        : isSw
+                        ? "bg-violet-500/10 text-violet-400"
+                        : "bg-emerald-500/10 text-emerald-400"
                     )}
                   >
                     <Icon className="w-5 h-5" />

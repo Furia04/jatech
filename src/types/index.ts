@@ -1,4 +1,4 @@
-export type CoreMode = "hardware" | "software";
+export type CoreMode = "hardware" | "software" | "solutions";
 
 export interface ServiceItem {
   id: string;
