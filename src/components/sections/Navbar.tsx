@@ -25,7 +25,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
 
   const navLinks = [
     { label: "Servicios", href: "#servicios" },
-    { label: "Impresión 3D", href: "#impresion-3d" },
     { label: "Equipo", href: "#equipo" },
     { label: "Contacto", href: "#contacto" },
   ];
