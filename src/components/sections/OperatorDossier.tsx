@@ -74,15 +74,6 @@ export const OperatorDossier: React.FC = () => {
               className="p-5 sm:p-6 flex flex-col justify-between"
             >
               <div>
-                {/* Header Status */}
-                <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/[0.08] text-xs font-mono">
-                  <span className="flex items-center gap-2 text-emerald-400">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    {member.status}
-                  </span>
-                  <span className="text-slate-400">{member.id}</span>
-                </div>
-
                 {/* Profile Avatar & Info */}
                 <div className="flex items-center gap-3.5 mb-4">
                   <div
