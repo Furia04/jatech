@@ -1,5 +1,6 @@
 import React from "react";
-import { Cpu, MessageSquare, Instagram, Mail } from "lucide-react";
+import { MessageSquare, Instagram, Mail } from "lucide-react";
+import { JatechLogo } from "@/components/ui/JatechLogo";
 
 export const Footer: React.FC = () => {
   return (
@@ -8,9 +9,7 @@ export const Footer: React.FC = () => {
         {/* Col 1 */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <div className="logo-shimmer rounded-lg relative w-24 h-7">
-              <img src="/logo.png" alt="Jatech Logo" className="object-contain w-full h-full" />
-            </div>
+            <JatechLogo size="sm" />
           </div>
           <p className="text-slate-400 text-xs leading-relaxed">
             Servicio técnico de notebooks, computadoras, celulares e impresoras, fabricación 3D a medida y soluciones de software y marketing digital para tu negocio.

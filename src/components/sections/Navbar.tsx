@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Cpu, Menu, X, ArrowUpRight, MessageSquare, Instagram } from "lucide-react";
 import { CoreMode } from "@/types";
 import { cn } from "@/lib/utils";
+import { JatechLogo } from "@/components/ui/JatechLogo";
 
 interface NavbarProps {
   activeCore: CoreMode;
@@ -40,16 +41,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
             : "bg-[#0a0a14]/75 border-white/[0.08]"
         )}
       >
-        {/* Brand Name: Jatech (Without 'Engineering lab') */}
-        <a href="#" className="flex items-center gap-2.5 group focus:outline-none">
-          <div className="logo-shimmer rounded-lg relative w-24 sm:w-28 h-8 sm:h-10">
-            {/* Using next/image for optimized loading. Ensure the image is in public/logo.png */}
-            <img 
-              src="/logo.png" 
-              alt="Jatech Logo" 
-              className="object-contain w-full h-full"
-            />
-          </div>
+        {/* Brand Name: Jatech */}
+        <a href="#" className="flex items-center gap-2.5 focus:outline-none">
+          <JatechLogo size="md" />
         </a>
 
         {/* Simple navigation links */}

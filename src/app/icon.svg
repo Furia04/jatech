@@ -1,0 +1,33 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#0f172a" />
+      <stop offset="50%" stopColor="#080811" />
+      <stop offset="100%" stopColor="#1e1136" />
+    </linearGradient>
+    <linearGradient id="j-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#38bdf8" />
+      <stop offset="100%" stopColor="#06b6d4" />
+    </linearGradient>
+    <linearGradient id="t-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#c084fc" />
+      <stop offset="100%" stopColor="#8b5cf6" />
+    </linearGradient>
+    <linearGradient id="border-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.8" />
+      <stop offset="100%" stopColor="#a855f7" stopOpacity="0.8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle container -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#bg-grad)" stroke="url(#border-grad)" stroke-width="2.5" />
+
+  <!-- Monogram J -->
+  <path d="M18 16V36C18 41.5228 22.4772 46 28 46H28.5C31.5376 46 34 43.5376 34 40.5C34 37.4624 31.5376 35 28.5 35H27C25.3431 35 24 33.6569 24 32V16H18Z" fill="url(#j-grad)" />
+
+  <!-- Monogram T -->
+  <path d="M26 16H48V22H40V45H34V22H26V16Z" fill="url(#t-grad)" />
+
+  <!-- High-tech cyan pulse dot -->
+  <circle cx="43" cy="34" r="3" fill="#22d3ee" />
+</svg>
