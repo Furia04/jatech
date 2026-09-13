@@ -32,11 +32,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       titlePrefix: "Servicio Técnico e",
       titleHighlight: "Impresiones 3D",
       subtitle:
-        "Reparamos tus equipos con repuestos de calidad, diagnósticos claros y sin demoras innecesarias. Además, diseñamos y fabricamos piezas e impresiones 3D a tu medida con precios accesibles.",
+        "Reparamos notebooks, computadoras, celulares e impresoras con repuestos de calidad, diagnósticos honestos y sin demoras. Además, diseñamos y fabricamos piezas 3D a tu medida con precios accesibles.",
       tags: [
         "Reparación de Notebooks y PC",
+        "Celulares e Impresoras",
         "Diagnóstico Rápido y Honesto",
-        "Garantía en Cada Trabajo",
         "Piezas 3D y Ventas al por Mayor",
       ],
       highlights: [
@@ -50,24 +50,24 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     },
     software: {
       badge: "CRECIMIENTO DIGITAL PARA TU NEGOCIO",
-      titlePrefix: "Landing Pages y",
-      titleHighlight: "Software a Medida",
+      titlePrefix: "Software, Web y",
+      titleHighlight: "Marketing Digital",
       subtitle:
-        "Creamos páginas web que convierten visitas en clientes y desarrollamos software personalizado según tus necesidades. Sitios rápidos, atractivos y fáciles de usar desde cualquier celular.",
+        "Diseñamos páginas web que convierten, desarrollamos software a medida según tus necesidades y gestionamos campañas de marketing digital (Meta y Google Ads) para atraer más clientes.",
       tags: [
-        "Páginas Web que Venden",
-        "Diseño Adaptado a Celulares",
-        "Sistemas a Medida de tu Negocio",
-        "Soporte y Mantenimiento",
+        "Páginas Web de Alta Conversión",
+        "Campañas de Google & Meta Ads",
+        "Software a Medida de tu Negocio",
+        "Estrategias de Crecimiento",
       ],
       highlights: [
-        { icon: Zap, title: "Más Ventas", desc: "Diseño enfocado en captar clientes" },
-        { icon: CheckCircle2, title: "Fácil de Administrar", desc: "Sin complicaciones técnicas" },
-        { icon: Globe, title: "100% Personalizado", desc: "Hecho a la medida de tu negocio" },
+        { icon: Zap, title: "Más Ventas", desc: "Publicidad y webs diseñadas para vender" },
+        { icon: CheckCircle2, title: "Fácil de Administrar", desc: "Sistemas simples sin complicaciones" },
+        { icon: Globe, title: "Presencia Digital", desc: "Posicionamiento en Google y redes" },
       ],
-      ctaPrimary: "Pedir Presupuesto Web",
-      ctaSecondary: "Ver Diseños",
-      primaryLink: "https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quiero%20cotizar%20una%20landing%20page%20o%20desarrollo%20de%20software.",
+      ctaPrimary: "Pedir Presupuesto Digital",
+      ctaSecondary: "Ver Servicios",
+      primaryLink: "https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quiero%20cotizar%20un%20proyecto%20web%2C%20software%20o%20marketing%20digital.",
     },
   };
 
@@ -75,7 +75,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
   return (
     <section className="relative min-h-[85vh] pt-28 pb-16 flex flex-col justify-center items-center px-4 sm:px-6">
-      {/* Selector: Servicio Técnico e Impresiones 3D vs Landing Pages y Software a Medida */}
+      {/* Selector: Servicio Técnico e Impresiones 3D vs Software & Marketing Digital */}
       <div className="mb-8">
         <div className="p-1 rounded-2xl bg-[#0d0d1a] border border-white/10 flex flex-col sm:flex-row items-center gap-1">
           <button
@@ -101,7 +101,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             )}
           >
             <Globe className="w-4 h-4 text-violet-400" />
-            <span>Landing Pages y Software a Medida</span>
+            <span>Software, Web & Marketing Digital</span>
           </button>
         </div>
       </div>

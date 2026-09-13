@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { MessageSquare, Mail, Phone, Send, CheckCircle2 } from "lucide-react";
+import { MessageSquare, Mail, Phone, Send, CheckCircle2, Instagram } from "lucide-react";
 import { SpotlightCard } from "@/components/ui/SpotlightCard";
 
 export const ContactSection: React.FC = () => {
@@ -123,10 +123,10 @@ export const ContactSection: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, service: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-400 transition-colors"
                   >
-                    <option value="reparacion">Servicio Técnico (PC / Notebook / Consola)</option>
+                    <option value="reparacion">Servicio Técnico (PC / Notebook / Celular / Impresora)</option>
                     <option value="impresion3d">Impresión 3D / Piezas a Medida</option>
                     <option value="web">Landing Page o Software a Medida</option>
-                    <option value="marketing">Marketing Digital / Publicidad</option>
+                    <option value="marketing">Marketing Digital & Publicidad (Meta / Google Ads)</option>
                     <option value="redes">Redes e Internet Wi-Fi</option>
                     <option value="otro">Otro tipo de consulta</option>
                   </select>
@@ -142,7 +142,7 @@ export const ContactSection: React.FC = () => {
                   rows={3}
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  placeholder="Ej: Mi notebook no da imagen al encender / Necesito imprimir piezas / Campaña de publicidad..."
+                  placeholder="Ej: Mi notebook/impresora no funciona / Necesito imprimir piezas 3D / Quiero una web y campaña de publicidad..."
                   className="w-full px-4 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-400 transition-colors resize-none"
                 />
               </div>
@@ -159,7 +159,7 @@ export const ContactSection: React.FC = () => {
         </div>
 
         {/* Contact info footer */}
-        <div className="mt-8 pt-6 border-t border-white/[0.08] grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-400">
+        <div className="mt-8 pt-6 border-t border-white/[0.08] grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-slate-400">
           <a
             href="mailto:jatech.sj@gmail.com"
             className="flex items-center gap-2.5 hover:text-white transition-colors"
@@ -174,7 +174,16 @@ export const ContactSection: React.FC = () => {
             className="flex items-center gap-2.5 hover:text-white transition-colors"
           >
             <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>+54 9 264 504-5411 (WhatsApp)</span>
+            <span>264 504 5411 (WhatsApp)</span>
+          </a>
+          <a
+            href="https://instagram.com/jatech_sj"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2.5 hover:text-pink-300 transition-colors"
+          >
+            <Instagram className="w-4 h-4 text-pink-400 shrink-0" />
+            <span>@jatech_sj (Instagram)</span>
           </a>
         </div>
       </SpotlightCard>

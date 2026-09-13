@@ -62,17 +62,17 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
               Servicio Técnico Rápido y Confiable
             </h3>
             <p className="text-slate-300 text-sm leading-relaxed mb-5">
-              Reparamos notebooks, PCs de escritorio, consolas y placas electrónicas. Te explicamos
+              Reparamos notebooks, PCs de escritorio, celulares, impresoras y placas electrónicas. Te explicamos
               con claridad qué problema tiene tu equipo, te pasamos un presupuesto justo y te lo
               devolvemos funcionando en el menor tiempo posible.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
               {[
+                "Reparación de Notebooks, PCs y Celulares",
+                "Mantenimiento y Arreglo de Impresoras",
                 "Diagnóstico honesto sin costo oculto",
                 "Repuestos de primera calidad garantizados",
-                "Reparación de placas que otros dan por perdidas",
-                "Mantenimiento térmico y limpieza profunda",
               ].map((item, idx) => (
                 <div key={idx} className="flex items-center gap-2 text-xs text-slate-200">
                   <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />

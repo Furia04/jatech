@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cpu, Menu, X, ArrowUpRight, MessageSquare } from "lucide-react";
+import { Cpu, Menu, X, ArrowUpRight, MessageSquare, Instagram } from "lucide-react";
 import { CoreMode } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -67,7 +67,18 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
         </div>
 
         {/* Action Button & Mobile Toggle */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          <a
+            href="https://instagram.com/jatech_sj"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 rounded-full bg-white/5 border border-white/10 text-pink-400 hover:text-pink-300 hover:bg-white/10 transition-colors flex items-center justify-center"
+            title="Instagram @jatech_sj"
+            aria-label="Instagram"
+          >
+            <Instagram className="w-4 h-4" />
+          </a>
+
           <a
             href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta%20o%20pedir%20presupuesto."
             target="_blank"
@@ -75,12 +86,13 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
             className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-cyan-600 border border-white/20 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-transform"
           >
             <MessageSquare className="w-3.5 h-3.5" />
-            <span>Consultar por WhatsApp</span>
+            <span className="hidden sm:inline">Consultar por WhatsApp</span>
+            <span className="sm:hidden">WhatsApp</span>
           </a>
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="md:hidden p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white min-h-[40px] min-w-[40px] flex items-center justify-center"
             aria-label="Abrir Menú"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -112,16 +124,29 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
               ))}
             </div>
 
-            <a
-              href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta%20o%20pedir%20presupuesto."
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full py-3 rounded-xl text-sm font-semibold text-center text-white bg-gradient-to-r from-violet-600 to-cyan-600 flex items-center justify-center gap-2 mt-2"
-            >
-              <MessageSquare className="w-4 h-4" />
-              WhatsApp Directo
-            </a>
+            <div className="flex flex-col gap-2 mt-2">
+              <a
+                href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta%20o%20pedir%20presupuesto."
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full py-3 rounded-xl text-sm font-semibold text-center text-white bg-gradient-to-r from-violet-600 to-cyan-600 flex items-center justify-center gap-2"
+              >
+                <MessageSquare className="w-4 h-4" />
+                WhatsApp Directo
+              </a>
+
+              <a
+                href="https://instagram.com/jatech_sj"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full py-2.5 rounded-xl text-xs font-semibold text-center text-pink-300 bg-pink-500/10 border border-pink-500/20 flex items-center justify-center gap-2"
+              >
+                <Instagram className="w-4 h-4" />
+                Seguinos en Instagram (@jatech_sj)
+              </a>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
