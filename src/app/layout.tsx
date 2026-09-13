@@ -15,20 +15,26 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JATECH // Servicio Técnico e Impresiones 3D & Software a Medida",
+  title: "JATECH - Soluciones Informáticas",
   description:
-    "Reparación rápida y confiable de computadoras y notebooks, fabricación e impresión 3D a medida con precios accesibles, marketing digital y diseño de software para hacer crecer tu negocio.",
+    "Servicio técnico de notebooks, computadoras, celulares e impresoras, fabricación 3D a medida, páginas web, software y marketing digital.",
   keywords: [
     "Jatech",
+    "Soluciones Informáticas",
     "Servicio Técnico",
     "Reparación de Notebooks",
+    "Celulares e Impresoras",
     "Impresión 3D",
-    "Venta Mayorista 3D",
     "Marketing Digital",
     "Landing Pages",
     "Software a Medida",
   ],
   authors: [{ name: "Jatech Team" }],
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export const viewport: Viewport = {
