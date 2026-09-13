@@ -7,6 +7,7 @@ import {
   Box,
   Wifi,
   Briefcase,
+  Megaphone,
   CheckCircle2,
   Clock,
   ShieldCheck,
@@ -84,7 +85,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
           <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs">
             <span className="text-slate-400">¿Tu equipo no enciende o anda lento?</span>
             <a
-              href="https://wa.me/5491100000000?text=Hola%20Jatech%2C%20tengo%20un%20equipo%20para%20reparar."
+              href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20tengo%20un%20equipo%20para%20reparar."
               target="_blank"
               rel="noopener noreferrer"
               className="text-cyan-300 font-semibold hover:underline flex items-center gap-1"
@@ -135,7 +136,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
           <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs">
             <span className="text-slate-400">Páginas listas para vender</span>
             <a
-              href="https://wa.me/5491100000000?text=Hola%20Jatech%2C%20quiero%20cotizar%20una%20p%C3%A1gina%20web%20o%20software."
+              href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quiero%20cotizar%20una%20p%C3%A1gina%20web%20o%20software."
               target="_blank"
               rel="noopener noreferrer"
               className="text-violet-300 font-semibold hover:underline flex items-center gap-1"
@@ -145,11 +146,64 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
           </div>
         </SpotlightCard>
 
-        {/* CARD 3: IMPRESIÓN 3D (Lg: 4 cols) */}
+        {/* CARD 3: MARKETING DIGITAL (Lg: 6 cols) */}
+        <SpotlightCard
+          glowColor="violet"
+          className="lg:col-span-6 p-6 sm:p-7 flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div className="p-2.5 rounded-xl bg-pink-500/10 text-pink-400">
+                <Megaphone className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-white/5 text-pink-300 border border-white/10">
+                MÁS CLIENTES Y VENTAS
+              </span>
+            </div>
+
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
+              Marketing Digital & Publicidad Online
+            </h3>
+            <p className="text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
+              Hacé crecer tu marca con campañas publicitarias efectivas en redes sociales y buscadores.
+              Atraemos potenciales clientes interesados en tus productos o servicios listos para comprar.
+            </p>
+
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {[
+                "Publicidad en Instagram & Facebook",
+                "Campañas en Google Ads",
+                "Estrategias de Conversión",
+                "Posicionamiento de Marca",
+              ].map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2 py-1 rounded bg-white/[0.04] border border-white/[0.08] text-[11px] text-slate-300"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs">
+            <span className="text-pink-300 font-medium">Llegá a tu público ideal</span>
+            <a
+              href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20asesoramiento%20sobre%20Marketing%20Digital%20y%20publicidad."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white hover:underline"
+            >
+              Consultar Marketing &rarr;
+            </a>
+          </div>
+        </SpotlightCard>
+
+        {/* CARD 4: IMPRESIÓN 3D (Lg: 6 cols) */}
         <SpotlightCard
           id="impresion-3d"
           glowColor="default"
-          className="lg:col-span-4 p-6 flex flex-col justify-between"
+          className="lg:col-span-6 p-6 sm:p-7 flex flex-col justify-between"
         >
           <div>
             <div className="flex items-center justify-between gap-4 mb-4">
@@ -161,7 +215,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
               </span>
             </div>
 
-            <h3 className="text-lg font-bold text-white mb-2">
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
               Impresión 3D y Piezas a Medida
             </h3>
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
@@ -184,7 +238,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
           <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs">
             <span className="text-purple-300 font-medium">Minorista y Mayorista</span>
             <a
-              href="https://wa.me/5491100000000?text=Hola%20Jatech%2C%20quisiera%20cotizar%20un%20trabajo%20de%20impresi%C3%B3n%203D."
+              href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20cotizar%20un%20trabajo%20de%20impresi%C3%B3n%203D."
               target="_blank"
               rel="noopener noreferrer"
               className="text-white hover:underline"
@@ -194,10 +248,10 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
           </div>
         </SpotlightCard>
 
-        {/* CARD 4: REDES E INTERNET (Lg: 4 cols) */}
+        {/* CARD 5: REDES E INTERNET (Lg: 6 cols) */}
         <SpotlightCard
           glowColor="cyan"
-          className="lg:col-span-4 p-6 flex flex-col justify-between"
+          className="lg:col-span-6 p-6 sm:p-7 flex flex-col justify-between"
         >
           <div>
             <div className="flex items-center justify-between gap-4 mb-4">
@@ -209,7 +263,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
               </span>
             </div>
 
-            <h3 className="text-lg font-bold text-white mb-2">
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
               Redes e Internet sin Cortes
             </h3>
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
@@ -232,7 +286,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
           <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs">
             <span className="text-blue-300 font-medium">Cobertura total</span>
             <a
-              href="https://wa.me/5491100000000?text=Hola%20Jatech%2C%20tengo%20problemas%20con%20mi%20conexi%C3%B3n%20o%20necesito%20instalar%20redes."
+              href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20tengo%20problemas%20con%20mi%20conexi%C3%B3n%20o%20necesito%20instalar%20redes."
               target="_blank"
               rel="noopener noreferrer"
               className="text-white hover:underline"
@@ -242,10 +296,10 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
           </div>
         </SpotlightCard>
 
-        {/* CARD 5: SOPORTE PARA PYMES Y COMERCIOS (Lg: 4 cols) */}
+        {/* CARD 6: SOPORTE PARA PYMES Y COMERCIOS (Lg: 6 cols) */}
         <SpotlightCard
           glowColor="emerald"
-          className="lg:col-span-4 p-6 flex flex-col justify-between"
+          className="lg:col-span-6 p-6 sm:p-7 flex flex-col justify-between"
         >
           <div>
             <div className="flex items-center justify-between gap-4 mb-4">
@@ -257,7 +311,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
               </span>
             </div>
 
-            <h3 className="text-lg font-bold text-white mb-2">
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
               Soporte Tecnológico para Comercios y PyMEs
             </h3>
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
@@ -280,7 +334,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
           <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs">
             <span className="text-emerald-400 font-medium">Tranquilidad para tu negocio</span>
             <a
-              href="https://wa.me/5491100000000?text=Hola%20Jatech%2C%20quisiera%20soporte%20t%C3%A9cnico%20para%20mi%20comercio%20o%20empresa."
+              href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20soporte%20t%C3%A9cnico%20para%20mi%20comercio%20o%20empresa."
               target="_blank"
               rel="noopener noreferrer"
               className="text-white hover:underline"

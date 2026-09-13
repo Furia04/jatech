@@ -115,7 +115,7 @@ export const OperatorDossier: React.FC = () => {
               <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between">
                 <span className="text-xs text-slate-400">Trato directo y transparente</span>
                 <a
-                  href={`https://wa.me/5491100000000?text=Hola%20${member.name}%20de%20Jatech%2C%20quisiera%20hacerte%20una%20consulta.`}
+                  href={`https://wa.me/5492645045411?text=Hola%20${member.name}%20de%20Jatech%2C%20quisiera%20hacerte%20una%20consulta.`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`text-xs font-semibold flex items-center gap-1.5 hover:underline ${

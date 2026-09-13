@@ -43,19 +43,15 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
       >
         {/* Brand Name: Jatech (Without 'Engineering lab') */}
         <a href="#" className="flex items-center gap-2.5 group focus:outline-none">
-          <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-violet-600/30 via-slate-900 to-cyan-500/30 border border-white/15 group-hover:border-cyan-400/50 transition-colors">
-            <Cpu className="w-4 h-4 text-cyan-400 group-hover:text-violet-300 transition-colors" />
+          <div className="logo-shimmer rounded-lg relative w-24 sm:w-28 h-8 sm:h-10">
+            {/* Using next/image for optimized loading. Ensure the image is in public/logo.png */}
+            <img 
+              src="/logo.png" 
+              alt="Jatech Logo" 
+              className="object-contain w-full h-full"
+            />
           </div>
-          <span className="font-mono text-base sm:text-lg font-extrabold tracking-wide text-white">
-            JATECH<span className="text-cyan-400">.</span>
-          </span>
         </a>
-
-        {/* Operational Status (Desktop) */}
-        <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/40 border border-emerald-500/20 text-emerald-400 font-mono text-xs">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>SISTEMA ONLINE // DISPONIBLE</span>
-        </div>
 
         {/* Simple navigation links */}
         <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
@@ -73,7 +69,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
         {/* Action Button & Mobile Toggle */}
         <div className="flex items-center gap-3">
           <a
-            href="https://wa.me/5491100000000?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta%20o%20pedir%20presupuesto."
+            href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta%20o%20pedir%20presupuesto."
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-cyan-600 border border-white/20 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-transform"
@@ -117,7 +113,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
             </div>
 
             <a
-              href="https://wa.me/5491100000000?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta%20o%20pedir%20presupuesto."
+              href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta%20o%20pedir%20presupuesto."
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setMobileMenuOpen(false)}

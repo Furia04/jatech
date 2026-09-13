@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { MessageSquare, Mail, Phone, MapPin, Send, CheckCircle2, Clock } from "lucide-react";
+import { MessageSquare, Mail, Phone, Send, CheckCircle2 } from "lucide-react";
 import { SpotlightCard } from "@/components/ui/SpotlightCard";
 
 export const ContactSection: React.FC = () => {
@@ -23,10 +23,14 @@ export const ContactSection: React.FC = () => {
         ? "Impresión 3D"
         : formData.service === "web"
         ? "Página Web / Software"
+        : formData.service === "marketing"
+        ? "Marketing Digital / Publicidad"
+        : formData.service === "redes"
+        ? "Redes e Internet"
         : "Consulta General";
 
     const text = `Hola Jatech! Mi nombre es ${formData.name}. Me gustaría consultar por ${serviceName}. Detalle: ${formData.message}`;
-    window.open(`https://wa.me/5491100000000?text=${encodeURIComponent(text)}`, "_blank");
+    window.open(`https://wa.me/5492645045411?text=${encodeURIComponent(text)}`, "_blank");
     setSubmitted(true);
   };
 
@@ -69,7 +73,7 @@ export const ContactSection: React.FC = () => {
           </div>
 
           <a
-            href="https://wa.me/5491100000000?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta%20o%20pedir%20presupuesto."
+            href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta%20o%20pedir%20presupuesto."
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm tracking-wide transition-colors flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-emerald-500/20"
@@ -122,6 +126,7 @@ export const ContactSection: React.FC = () => {
                     <option value="reparacion">Servicio Técnico (PC / Notebook / Consola)</option>
                     <option value="impresion3d">Impresión 3D / Piezas a Medida</option>
                     <option value="web">Landing Page o Software a Medida</option>
+                    <option value="marketing">Marketing Digital / Publicidad</option>
                     <option value="redes">Redes e Internet Wi-Fi</option>
                     <option value="otro">Otro tipo de consulta</option>
                   </select>
@@ -137,7 +142,7 @@ export const ContactSection: React.FC = () => {
                   rows={3}
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  placeholder="Ej: Mi notebook no da imagen al encender / Necesito imprimir 50 piezas de este modelo..."
+                  placeholder="Ej: Mi notebook no da imagen al encender / Necesito imprimir piezas / Campaña de publicidad..."
                   className="w-full px-4 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-400 transition-colors resize-none"
                 />
               </div>
@@ -154,19 +159,23 @@ export const ContactSection: React.FC = () => {
         </div>
 
         {/* Contact info footer */}
-        <div className="mt-8 pt-6 border-t border-white/[0.08] grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-slate-400">
-          <div className="flex items-center gap-2.5">
-            <Clock className="w-4 h-4 text-cyan-400 shrink-0" />
-            <span>Lunes a Viernes: 9:00 a 19:00 hs</span>
-          </div>
-          <div className="flex items-center gap-2.5">
+        <div className="mt-8 pt-6 border-t border-white/[0.08] grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-400">
+          <a
+            href="mailto:jatech.sj@gmail.com"
+            className="flex items-center gap-2.5 hover:text-white transition-colors"
+          >
             <Mail className="w-4 h-4 text-violet-400 shrink-0" />
-            <span>contacto@jatech.com</span>
-          </div>
-          <div className="flex items-center gap-2.5">
+            <span>jatech.sj@gmail.com</span>
+          </a>
+          <a
+            href="https://wa.me/5492645045411"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2.5 hover:text-white transition-colors"
+          >
             <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>WhatsApp directo activo</span>
-          </div>
+            <span>+54 9 264 504-5411 (WhatsApp)</span>
+          </a>
         </div>
       </SpotlightCard>
     </section>

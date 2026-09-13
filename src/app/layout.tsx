@@ -15,15 +15,16 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JATECH // Servicio Técnico, Impresiones 3D y Software a Medida",
+  title: "JATECH // Servicio Técnico e Impresiones 3D & Software a Medida",
   description:
-    "Reparación rápida y confiable de computadoras y notebooks, fabricación e impresión 3D a medida con precios accesibles y diseño de landing pages y software para hacer crecer tu negocio.",
+    "Reparación rápida y confiable de computadoras y notebooks, fabricación e impresión 3D a medida con precios accesibles, marketing digital y diseño de software para hacer crecer tu negocio.",
   keywords: [
     "Jatech",
     "Servicio Técnico",
     "Reparación de Notebooks",
     "Impresión 3D",
     "Venta Mayorista 3D",
+    "Marketing Digital",
     "Landing Pages",
     "Software a Medida",
   ],

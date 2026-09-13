@@ -57,7 +57,7 @@ export const Footer: React.FC = () => {
             ¿Tenés alguna consulta o presupuesto urgente? Escribinos directamente.
           </p>
           <a
-            href="https://wa.me/5491100000000?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta."
+            href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta."
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium hover:bg-emerald-500/20 transition-colors"
