@@ -15,7 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://jatech.vercel.app"),
+  metadataBase: new URL("https://jatech.com.ar"),
   title: {
     default: "JATECH - Soluciones Informáticas & Impresión 3D | San Juan",
     template: "%s | JATECH",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "es_AR",
-    url: "https://jatech.vercel.app",
+    url: "https://jatech.com.ar",
     title: "JATECH - Soluciones Informáticas & Impresión 3D",
     description:
       "Servicio técnico de notebooks, celulares e impresoras, piezas 3D a medida, software y marketing digital en San Juan, Argentina.",
@@ -98,7 +98,7 @@ const jsonLd = {
   "alternateName": "JATECH Soluciones Informáticas",
   "description":
     "Servicio técnico especializado de computadoras, notebooks, celulares e impresoras, piezas e impresión 3D a medida, software y marketing digital.",
-  "url": "https://jatech.vercel.app",
+  "url": "https://jatech.com.ar",
   "telephone": "+5492645045411",
   "email": "jatech.sj@gmail.com",
   "address": {
