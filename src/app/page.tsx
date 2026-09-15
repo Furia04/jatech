@@ -6,6 +6,7 @@ import { BackgroundCanvas } from "@/components/ui/BackgroundCanvas";
 import { Navbar } from "@/components/sections/Navbar";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { BentoGrid } from "@/components/sections/BentoGrid";
+import { GestionTecnicosSection } from "@/components/sections/GestionTecnicosSection";
 import { OperatorDossier } from "@/components/sections/OperatorDossier";
 import { ContactSection } from "@/components/sections/ContactSection";
 import { Footer } from "@/components/sections/Footer";
@@ -26,6 +27,9 @@ export default function Home() {
 
       {/* Bento Grid: Servicios con enfoque claro y amigable */}
       <BentoGrid activeCore={activeCore} />
+
+      {/* Software de Taller / Gestión Técnicos */}
+      <GestionTecnicosSection />
 
       {/* Equipo / Fichas de Técnicos (sin barras de progreso) */}
       <OperatorDossier />

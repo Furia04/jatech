@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cpu, Menu, X, ArrowUpRight, MessageSquare, Instagram } from "lucide-react";
+import { Cpu, Menu, X, ArrowUpRight, MessageSquare, Instagram, Wrench } from "lucide-react";
 import { CoreMode } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
 
   const navLinks = [
     { label: "Servicios", href: "#servicios" },
+    { label: "Gestión Técnicos", href: "#gestion-tecnicos" },
     { label: "Equipo", href: "#equipo" },
     { label: "Contacto", href: "#contacto" },
   ];
@@ -65,7 +66,17 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
         </div>
 
         {/* Action Button & Mobile Toggle */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <a
+            href="/GestionTecnicos/login"
+            className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-xs font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50 transition-all shadow-sm active:scale-95"
+            title="Portal de Gestión para Técnicos y Talleres"
+          >
+            <Wrench className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Gestión Técnicos</span>
+            <span className="sm:hidden">Técnicos</span>
+          </a>
+
           <a
             href="https://instagram.com/jatech_sj"
             target="_blank"
@@ -81,11 +92,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
             href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta%20o%20pedir%20presupuesto."
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-cyan-600 border border-white/20 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-transform"
+            className="inline-flex items-center gap-2 px-3.5 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-cyan-600 border border-white/20 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-transform"
           >
             <MessageSquare className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Consultar por WhatsApp</span>
-            <span className="sm:hidden">WhatsApp</span>
+            <span className="hidden md:inline">Consultar por WhatsApp</span>
+            <span className="md:hidden">WhatsApp</span>
           </a>
 
           <button
@@ -123,6 +134,15 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
             </div>
 
             <div className="flex flex-col gap-2 mt-2">
+              <a
+                href="/GestionTecnicos/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full py-2.5 rounded-xl text-xs font-semibold text-center text-amber-300 bg-amber-500/15 border border-amber-500/30 flex items-center justify-center gap-2 shadow-sm"
+              >
+                <Wrench className="w-4 h-4 text-amber-400" />
+                Portal Gestión de Técnicos & Talleres
+              </a>
+
               <a
                 href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta%20o%20pedir%20presupuesto."
                 target="_blank"

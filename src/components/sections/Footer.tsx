@@ -40,8 +40,16 @@ export const Footer: React.FC = () => {
           <ul className="space-y-2 text-slate-400 text-xs">
             <li>Landing Pages de Alta Conversión</li>
             <li>Software y Sistemas a Medida</li>
-            <li>Publicidad en Meta &amp; Google Ads</li>
-            <li>Estrategias de Marketing Digital</li>
+            <li>
+              <a href="/GestionTecnicos/login" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">
+                Portal Gestión Técnicos (SaaS) &rarr;
+              </a>
+            </li>
+            <li>
+              <a href="/GestionTecnicos/track" className="text-slate-300 hover:text-white transition-colors">
+                Seguimiento de Reparación (Clientes)
+              </a>
+            </li>
           </ul>
         </div>
 
