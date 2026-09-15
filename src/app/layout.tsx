@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const inter = Inter({
@@ -199,6 +201,8 @@ export default function RootLayout({
       </head>
       <body className="bg-[#050508] text-slate-100 font-sans min-h-screen selection:bg-cyan-500/30 selection:text-white antialiased overflow-x-hidden relative">
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
