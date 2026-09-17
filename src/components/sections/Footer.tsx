@@ -64,7 +64,7 @@ export const Footer: React.FC = () => {
           </p>
           <div className="flex flex-col gap-2">
             <a
-              href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta."
+              href="https://wa.me/5492646211278?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta."
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium hover:bg-emerald-500/20 transition-colors"

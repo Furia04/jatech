@@ -30,7 +30,7 @@ export const ContactSection: React.FC = () => {
         : "Consulta General";
 
     const text = `Hola Jatech! Mi nombre es ${formData.name}. Me gustaría consultar por ${serviceName}. Detalle: ${formData.message}`;
-    window.open(`https://wa.me/5492645045411?text=${encodeURIComponent(text)}`, "_blank");
+    window.open(`https://wa.me/5492646211278?text=${encodeURIComponent(text)}`, "_blank");
     setSubmitted(true);
   };
 
@@ -73,7 +73,7 @@ export const ContactSection: React.FC = () => {
           </div>
 
           <a
-            href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta%20o%20pedir%20presupuesto."
+            href="https://wa.me/5492646211278?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta%20o%20pedir%20presupuesto."
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm tracking-wide transition-colors flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-emerald-500/20"
@@ -168,13 +168,13 @@ export const ContactSection: React.FC = () => {
             <span>jatech.sj@gmail.com</span>
           </a>
           <a
-            href="https://wa.me/5492645045411"
+            href="https://wa.me/5492646211278"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2.5 hover:text-white transition-colors"
           >
             <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>264 504 5411 (WhatsApp)</span>
+            <span>264 621 1278 (WhatsApp)</span>
           </a>
           <a
             href="https://instagram.com/jatech_sj"

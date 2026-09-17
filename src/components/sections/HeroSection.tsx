@@ -52,7 +52,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       ],
       ctaPrimary: "Consultar por Reparación",
       ctaSecondary: "Ver Opciones 3D",
-      primaryLink: "https://wa.me/5492645045411?text=Hola%20Jatech%2C%20tengo%20un%20equipo%20para%20reparar%20o%20consultar%20por%20impresi%C3%B3n%203D.",
+      primaryLink: "https://wa.me/5492646211278?text=Hola%20Jatech%2C%20tengo%20un%20equipo%20para%20reparar%20o%20consultar%20por%20impresi%C3%B3n%203D.",
     },
     software: {
       badge: "CRECIMIENTO DIGITAL PARA TU NEGOCIO",
@@ -73,7 +73,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       ],
       ctaPrimary: "Pedir Presupuesto Web",
       ctaSecondary: "Ver Diseños",
-      primaryLink: "https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quiero%20cotizar%20una%20landing%20page%20o%20desarrollo%20de%20software.",
+      primaryLink: "https://wa.me/5492646211278?text=Hola%20Jatech%2C%20quiero%20cotizar%20una%20landing%20page%20o%20desarrollo%20de%20software.",
     },
     solutions: {
       badge: "IMPULSO Y CONECTIVIDAD PARA TU NEGOCIO",
@@ -94,7 +94,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       ],
       ctaPrimary: "Consultar por Servicios",
       ctaSecondary: "Ver Todos los Servicios",
-      primaryLink: "https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20asesoramiento%20sobre%20Marketing%2C%20Redes%20o%20Soporte%20PyME.",
+      primaryLink: "https://wa.me/5492646211278?text=Hola%20Jatech%2C%20quisiera%20asesoramiento%20sobre%20Marketing%2C%20Redes%20o%20Soporte%20PyME.",
     },
   };
 

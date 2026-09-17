@@ -102,7 +102,7 @@ const jsonLd = {
   "description":
     "Servicio técnico especializado de computadoras, notebooks, celulares e impresoras, piezas e impresión 3D a medida, software y marketing digital.",
   "url": "https://jatech.com.ar",
-  "telephone": "+5492645045411",
+  "telephone": "+5492646211278",
   "email": "jatech.sj@gmail.com",
   "address": {
     "@type": "PostalAddress",
@@ -117,7 +117,7 @@ const jsonLd = {
   },
   "sameAs": [
     "https://instagram.com/jatech_sj",
-    "https://wa.me/5492645045411",
+    "https://wa.me/5492646211278",
   ],
   "priceRange": "$$",
   "areaServed": {

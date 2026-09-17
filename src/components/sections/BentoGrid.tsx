@@ -85,7 +85,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
           <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs">
             <span className="text-slate-400">¿Tu equipo no enciende o anda lento?</span>
             <a
-              href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20tengo%20un%20equipo%20para%20reparar."
+              href="https://wa.me/5492646211278?text=Hola%20Jatech%2C%20tengo%20un%20equipo%20para%20reparar."
               target="_blank"
               rel="noopener noreferrer"
               className="text-cyan-300 font-semibold hover:underline flex items-center gap-1"
@@ -136,7 +136,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
           <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs">
             <span className="text-slate-400">Páginas listas para vender</span>
             <a
-              href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quiero%20cotizar%20una%20p%C3%A1gina%20web%20o%20software."
+              href="https://wa.me/5492646211278?text=Hola%20Jatech%2C%20quiero%20cotizar%20una%20p%C3%A1gina%20web%20o%20software."
               target="_blank"
               rel="noopener noreferrer"
               className="text-violet-300 font-semibold hover:underline flex items-center gap-1"
@@ -189,7 +189,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
           <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs">
             <span className="text-pink-300 font-medium">Llegá a tu público ideal</span>
             <a
-              href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20asesoramiento%20sobre%20Marketing%20Digital%20y%20publicidad."
+              href="https://wa.me/5492646211278?text=Hola%20Jatech%2C%20quisiera%20asesoramiento%20sobre%20Marketing%20Digital%20y%20publicidad."
               target="_blank"
               rel="noopener noreferrer"
               className="text-white hover:underline"
@@ -238,7 +238,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
           <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs">
             <span className="text-purple-300 font-medium">Minorista y Mayorista</span>
             <a
-              href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20cotizar%20un%20trabajo%20de%20impresi%C3%B3n%203D."
+              href="https://wa.me/5492646211278?text=Hola%20Jatech%2C%20quisiera%20cotizar%20un%20trabajo%20de%20impresi%C3%B3n%203D."
               target="_blank"
               rel="noopener noreferrer"
               className="text-white hover:underline"
@@ -286,7 +286,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
           <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs">
             <span className="text-blue-300 font-medium">Cobertura total</span>
             <a
-              href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20tengo%20problemas%20con%20mi%20conexi%C3%B3n%20o%20necesito%20instalar%20redes."
+              href="https://wa.me/5492646211278?text=Hola%20Jatech%2C%20tengo%20problemas%20con%20mi%20conexi%C3%B3n%20o%20necesito%20instalar%20redes."
               target="_blank"
               rel="noopener noreferrer"
               className="text-white hover:underline"
@@ -334,7 +334,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({ activeCore }) => {
           <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs">
             <span className="text-emerald-400 font-medium">Tranquilidad para tu negocio</span>
             <a
-              href="https://wa.me/5492645045411?text=Hola%20Jatech%2C%20quisiera%20soporte%20t%C3%A9cnico%20para%20mi%20comercio%20o%20empresa."
+              href="https://wa.me/5492646211278?text=Hola%20Jatech%2C%20quisiera%20soporte%20t%C3%A9cnico%20para%20mi%20comercio%20o%20empresa."
               target="_blank"
               rel="noopener noreferrer"
               className="text-white hover:underline"
