@@ -656,8 +656,8 @@ export default function LandingPage() {
           <p>© 2026 JaTech. Software de Precisión para Servicio Técnico.</p>
 
           <div className="flex gap-6">
-            <Link href="/terms" className="hover:text-amber-400 transition-colors">Términos de Servicio</Link>
-            <Link href="/privacy" className="hover:text-amber-400 transition-colors">Privacidad</Link>
+            <Link href="/GestionTecnicos/terms" className="hover:text-amber-400 transition-colors">Términos de Servicio</Link>
+            <Link href="/GestionTecnicos/privacy" className="hover:text-amber-400 transition-colors">Privacidad</Link>
             <a href="#" className="hover:text-amber-400 transition-colors">Soporte</a>
           </div>
         </div>
