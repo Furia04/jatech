@@ -1,5 +1,5 @@
 import { supabase } from './client';
-import { Customer, Device, DeviceCategoryTemplate, InventoryItem, OrderSpare, ServiceOrder, Shop, UserProfile } from '@/types';
+import { Customer, Device, DeviceCategoryTemplate, InventoryItem, OrderSpare, PartOrder, ServiceOrder, Shop, UserProfile } from '@/types';
 
 // =======================================================
 // OBTENER PERFIL Y TALLER (TENANT) DEL USUARIO AUTENTICADO
@@ -1229,3 +1229,157 @@ export async function returnSpareToInventory(spareId: string): Promise<boolean> 
     return false;
   }
 }
+
+// =======================================================
+// PEDIDOS DE REPUESTOS / ENCARGOS (PART_ORDERS)
+// =======================================================
+
+export async function fetchPartOrders(): Promise<PartOrder[]> {
+  try {
+    const profile = await getCurrentUserProfile();
+    if (!profile) return [];
+
+    let query = supabase
+      .from('part_orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    // Si no es superadmin, filtrar por shop_id
+    if (profile.role !== 'superadmin') {
+      const shopId = profile.shop_id || profile.id;
+      query = query.eq('shop_id', shopId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error al consultar part_orders en Supabase:', error);
+      return [];
+    }
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      shop_id: row.shop_id,
+      customer_name: row.customer_name,
+      customer_phone: row.customer_phone,
+      part_name: row.part_name,
+      device_model: row.device_model || '',
+      advance_payment: Number(row.advance_payment || 0),
+      expected_price: Number(row.expected_price || 0),
+      status: row.status || 'pending',
+      notes: row.notes || '',
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    }));
+  } catch (err) {
+    console.error('Error general en fetchPartOrders:', err);
+    return [];
+  }
+}
+
+export async function createPartOrder(
+  data: Omit<PartOrder, 'id' | 'created_at' | 'updated_at'>
+): Promise<PartOrder | null> {
+  try {
+    const profile = await getCurrentUserProfile();
+    if (!profile) throw new Error('No hay sesión de usuario activa.');
+
+    const shopId = data.shop_id || profile.shop_id || profile.id;
+
+    const payload = {
+      shop_id: shopId,
+      customer_name: data.customer_name.trim(),
+      customer_phone: data.customer_phone.trim(),
+      part_name: data.part_name.trim(),
+      device_model: data.device_model ? data.device_model.trim() : null,
+      advance_payment: data.advance_payment || 0,
+      expected_price: data.expected_price || 0,
+      status: data.status || 'pending',
+      notes: data.notes ? data.notes.trim() : null,
+    };
+
+    const { data: inserted, error } = await supabase
+      .from('part_orders')
+      .insert([payload])
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error al insertar part_order en Supabase:', error);
+      throw error;
+    }
+
+    return {
+      id: inserted.id,
+      shop_id: inserted.shop_id,
+      customer_name: inserted.customer_name,
+      customer_phone: inserted.customer_phone,
+      part_name: inserted.part_name,
+      device_model: inserted.device_model || '',
+      advance_payment: Number(inserted.advance_payment || 0),
+      expected_price: Number(inserted.expected_price || 0),
+      status: inserted.status || 'pending',
+      notes: inserted.notes || '',
+      created_at: inserted.created_at,
+      updated_at: inserted.updated_at,
+    };
+  } catch (err) {
+    console.error('Error en createPartOrder:', err);
+    throw err;
+  }
+}
+
+export async function updatePartOrder(
+  id: string,
+  updates: Partial<PartOrder>
+): Promise<boolean> {
+  try {
+    const payload: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (updates.customer_name !== undefined) payload.customer_name = updates.customer_name.trim();
+    if (updates.customer_phone !== undefined) payload.customer_phone = updates.customer_phone.trim();
+    if (updates.part_name !== undefined) payload.part_name = updates.part_name.trim();
+    if (updates.device_model !== undefined) payload.device_model = updates.device_model.trim();
+    if (updates.advance_payment !== undefined) payload.advance_payment = updates.advance_payment;
+    if (updates.expected_price !== undefined) payload.expected_price = updates.expected_price;
+    if (updates.status !== undefined) payload.status = updates.status;
+    if (updates.notes !== undefined) payload.notes = updates.notes.trim();
+
+    const { error } = await supabase
+      .from('part_orders')
+      .update(payload)
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error al actualizar part_order en Supabase:', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Error en updatePartOrder:', err);
+    return false;
+  }
+}
+
+export async function deletePartOrder(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('part_orders')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error al eliminar part_order en Supabase:', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Error en deletePartOrder:', err);
+    return false;
+  }
+}
+

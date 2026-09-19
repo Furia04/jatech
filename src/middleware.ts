@@ -62,12 +62,14 @@ export async function middleware(request: NextRequest) {
   const isProtectedWorkshopRoute =
     pathname.startsWith('/GestionTecnicos/dashboard') ||
     pathname.startsWith('/GestionTecnicos/orders') ||
+    pathname.startsWith('/GestionTecnicos/part-orders') ||
     pathname.startsWith('/GestionTecnicos/customers') ||
     pathname.startsWith('/GestionTecnicos/inventory') ||
     pathname.startsWith('/GestionTecnicos/devices') ||
     pathname.startsWith('/GestionTecnicos/settings') ||
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/orders') ||
+    pathname.startsWith('/part-orders') ||
     pathname.startsWith('/customers') ||
     pathname.startsWith('/inventory') ||
     pathname.startsWith('/devices') ||

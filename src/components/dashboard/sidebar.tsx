@@ -10,6 +10,7 @@ import {
   Wrench,
   Users,
   Package,
+  ShoppingBag,
   Smartphone,
   Settings,
   ShieldAlert,
@@ -29,9 +30,10 @@ export function Sidebar({ user, isOpen, onClose }: SidebarProps) {
   const navItems = [
     { href: '/GestionTecnicos/dashboard', label: 'Panel Principal', icon: LayoutDashboard },
     { href: '/GestionTecnicos/orders', label: 'Órdenes de Servicio', icon: Wrench },
+    { href: '/GestionTecnicos/part-orders', label: 'Pedidos de Repuestos', icon: ShoppingBag },
+    { href: '/GestionTecnicos/inventory', label: 'Inventario', icon: Package },
     { href: '/GestionTecnicos/customers', label: 'Clientes', icon: Users },
     { href: '/GestionTecnicos/devices', label: 'Dispositivos', icon: Smartphone },
-    { href: '/GestionTecnicos/inventory', label: 'Inventario', icon: Package },
     { href: '/GestionTecnicos/settings', label: 'Configuración', icon: Settings },
   ];
 
