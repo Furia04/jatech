@@ -7,18 +7,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: [
-        "/api/",
-        "/GestionTecnicos/dashboard",
-        "/GestionTecnicos/orders",
-        "/GestionTecnicos/customers",
-        "/GestionTecnicos/inventory",
-        "/GestionTecnicos/devices",
-        "/GestionTecnicos/settings",
-        "/GestionTecnicos/admin",
-        "/dashboard",
-        "/admin",
-      ],
+      disallow: ["/api/"],
     },
     sitemap: `${baseUrl}/sitemap.xml`,
   };

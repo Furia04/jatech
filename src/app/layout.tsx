@@ -19,9 +19,6 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://jatech.com.ar"),
-  alternates: {
-    canonical: "https://jatech.com.ar",
-  },
   title: {
     default: "JATECH - Soluciones Informáticas & Impresión 3D | San Juan",
     template: "%s | JATECH",
