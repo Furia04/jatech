@@ -15,6 +15,7 @@ import {
   ShieldAlert,
   UserCheck,
   X,
+  ShoppingCart,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -29,6 +30,7 @@ export function Sidebar({ user, isOpen, onClose }: SidebarProps) {
   const navItems = [
     { href: '/dashboard', label: 'Panel Principal', icon: LayoutDashboard },
     { href: '/orders', label: 'Órdenes de Servicio', icon: Wrench },
+    { href: '/part-orders', label: 'Pedidos de Repuestos', icon: ShoppingCart },
     { href: '/customers', label: 'Clientes', icon: Users },
     { href: '/devices', label: 'Dispositivos', icon: Smartphone },
     { href: '/inventory', label: 'Inventario', icon: Package },

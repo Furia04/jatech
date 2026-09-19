@@ -199,18 +199,21 @@ export default function ErgonomicSettingsPage() {
     setSaving(true);
     try {
       if (currentShopId) {
+        const profile = await getCurrentUserProfile();
+        
         await supabase
           .from('shops')
-          .update({
+          .upsert({
+            id: currentShopId,
             name: shopName,
+            owner_email: profile?.email || '',
             settings: {
               phone: whatsappPhone,
               ticket: { terms: ticketTerms },
               templates: templates,
             },
             updated_at: new Date().toISOString(),
-          })
-          .eq('id', currentShopId);
+          }, { onConflict: 'id' });
       }
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);

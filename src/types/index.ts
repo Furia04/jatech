@@ -142,3 +142,20 @@ export interface DeviceCategoryTemplate {
   category_name: string;
   fields: CustomFieldDefinition[];
 }
+
+export type PartOrderStatus = 'pending' | 'arrived' | 'delivered' | 'cancelled';
+
+export interface PartOrder {
+  id: string;
+  shop_id: string;
+  customer_name: string;
+  customer_phone: string;
+  part_name: string;
+  device_model?: string;
+  advance_payment: number;
+  expected_price: number;
+  status: PartOrderStatus;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}

@@ -206,7 +206,49 @@ export function CashRegisterModal({ isOpen = true, orders, shop, onClose }: Cash
   };
 
   const handlePrintZReport = () => {
-    window.print();
+    const printElement = document.getElementById('ticket-z-print-area');
+    if (!printElement) {
+      window.print();
+      return;
+    }
+    
+    const html = `
+      <html>
+        <head>
+          <title>Cierre de Caja Z</title>
+          <style>
+            body { font-family: monospace; font-size: 12px; width: 80mm; margin: 0 auto; padding: 10px; color: black; }
+            h1 { font-size: 14px; margin: 0 0 5px 0; }
+            p { margin: 2px 0; }
+            .text-center { text-align: center; }
+            .font-bold { font-weight: bold; }
+            .font-extrabold { font-weight: 900; }
+            .uppercase { text-transform: uppercase; }
+            .flex { display: flex; justify-content: space-between; }
+            .border-b { border-bottom: 1px dashed black; }
+            .border-b-2 { border-bottom: 2px solid black; }
+            .pb-2 { padding-bottom: 8px; }
+            .mb-2 { margin-bottom: 8px; }
+            .pt-1 { padding-top: 4px; }
+            .py-2 { padding-top: 8px; padding-bottom: 8px; }
+            .space-y-1 > * + * { margin-top: 4px; }
+            .italic { font-style: italic; }
+            .text-xs { font-size: 11px; }
+          </style>
+        </head>
+        <body onload="window.print();">
+          ${printElement.innerHTML}
+        </body>
+      </html>
+    `;
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const printWindow = window.open(url, '_blank');
+    
+    if (!printWindow) {
+      // Fallback si hay bloqueador de popups
+      window.print();
+    }
   };
 
   if (!isOpen) return null;
@@ -233,16 +275,18 @@ export function CashRegisterModal({ isOpen = true, orders, shop, onClose }: Cash
           <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               onClick={handlePrintZReport}
-              className="px-3 py-2 bg-[#1b2230] hover:bg-[#232c3d] border border-white/10 text-slate-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
-              title="Imprimir Comanda Z de Cierre de Caja (80mm)"
+              disabled={filteredMovements.length === 0}
+              className={`px-3 py-2 border rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 ${filteredMovements.length === 0 ? 'bg-[#141923] border-white/5 text-slate-500 cursor-not-allowed' : 'bg-[#1b2230] hover:bg-[#232c3d] border-white/10 text-slate-200'}`}
+              title={filteredMovements.length === 0 ? "No hay datos para imprimir" : "Imprimir Comanda Z de Cierre de Caja (80mm)"}
             >
-              <Printer className="w-3.5 h-3.5 text-primary" /> Ticket Z (80mm)
+              <Printer className={`w-3.5 h-3.5 ${filteredMovements.length === 0 ? 'text-slate-500' : 'text-primary'}`} /> Ticket Z (80mm)
             </button>
 
             <button
               onClick={handleExportCSV}
-              className="px-3 py-2 bg-[#1b2230] hover:bg-[#232c3d] border border-white/10 text-emerald-400 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
-              title="Descargar archivo Excel / CSV"
+              disabled={filteredMovements.length === 0}
+              className={`px-3 py-2 border rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 ${filteredMovements.length === 0 ? 'bg-[#141923] border-white/5 text-slate-500 cursor-not-allowed' : 'bg-[#1b2230] hover:bg-[#232c3d] border-white/10 text-emerald-400'}`}
+              title={filteredMovements.length === 0 ? "No hay datos para exportar" : "Descargar archivo Excel / CSV"}
             >
               <FileSpreadsheet className="w-3.5 h-3.5" /> Exportar CSV
             </button>
@@ -484,7 +528,7 @@ export function CashRegisterModal({ isOpen = true, orders, shop, onClose }: Cash
       </div>
 
       {/* PLANTILLA DE IMPRESIÓN EXCLUSIVA TICKET Z DE 80MM */}
-      <div className="hidden print:block print:w-[80mm] print:p-3 print:m-0 print:bg-white print:text-black font-mono text-[10px] leading-tight">
+      <div id="ticket-z-print-area" className="hidden print:block print:w-[80mm] print:p-3 print:m-0 print:bg-white print:text-black font-mono text-[10px] leading-tight">
         <div className="text-center pb-2 mb-2 border-b border-dashed border-black">
           <h1 className="font-bold text-sm uppercase">CIERRE DE CAJA (Z-REPORT)</h1>
           <p className="font-bold text-xs">{shopName}</p>

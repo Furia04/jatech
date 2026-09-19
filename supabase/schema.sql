@@ -524,3 +524,34 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION public.get_public_order_tracking(TEXT) TO anon, authenticated;
+
+-- =======================================================
+-- 14. TABLA DE PEDIDOS DE REPUESTOS (PART_ORDERS)
+-- =======================================================
+
+CREATE TABLE IF NOT EXISTS part_orders (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  customer_name TEXT NOT NULL,
+  customer_phone TEXT NOT NULL,
+  part_name TEXT NOT NULL,
+  device_model TEXT,
+  advance_payment NUMERIC(10,2) DEFAULT 0.00,
+  expected_price NUMERIC(10,2) DEFAULT 0.00,
+  status TEXT DEFAULT 'pending', -- 'pending' (encargado), 'arrived' (llegó), 'delivered' (entregado/instalado), 'cancelled'
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE part_orders ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Superadmin Full Access Part Orders" ON part_orders
+  FOR ALL
+  USING (public.is_superadmin())
+  WITH CHECK (public.is_superadmin());
+
+CREATE POLICY "Tenant Isolation Part Orders" ON part_orders
+  FOR ALL
+  USING (shop_id = public.get_current_shop_id())
+  WITH CHECK (shop_id = public.get_current_shop_id());
