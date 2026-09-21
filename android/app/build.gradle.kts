@@ -19,12 +19,12 @@ android {
     val supabaseUrl = (localProperties.getProperty("SUPABASE_URL")
         ?: project.findProperty("SUPABASE_URL") as? String
         ?: System.getenv("NEXT_PUBLIC_SUPABASE_URL")
-        ?: "https://xyzcompany.supabase.co")
+        ?: "https://aswlxydrohyayweuhohp.supabase.co")
 
     val supabaseAnonKey = (localProperties.getProperty("SUPABASE_ANON_KEY")
         ?: project.findProperty("SUPABASE_ANON_KEY") as? String
         ?: System.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-        ?: "public-anon-key")
+        ?: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzd2x4eWRyb2h5YXl3ZXVob2hwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4Mzk2MjksImV4cCI6MjEwMzQxNTYyOX0.BXT23ax2SAj-Sa-bD-kajNIxXkNb_Z13gRiHqXuXsfg")
 
     defaultConfig {
         applicationId = "com.example.jatechsat"
