@@ -32,3 +32,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# android
+.gradle/
+android/**/build/
+android/.gradle/
+local.properties
+
+# graphify
+graphify-out/
