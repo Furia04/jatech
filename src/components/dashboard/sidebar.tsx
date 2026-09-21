@@ -15,6 +15,7 @@ import {
   Settings,
   ShieldAlert,
   UserCheck,
+  Briefcase,
   X,
 } from 'lucide-react';
 
@@ -30,6 +31,7 @@ export function Sidebar({ user, isOpen, onClose }: SidebarProps) {
   const navItems = [
     { href: '/GestionTecnicos/dashboard', label: 'Panel Principal', icon: LayoutDashboard },
     { href: '/GestionTecnicos/orders', label: 'Órdenes de Servicio', icon: Wrench },
+    { href: '/GestionTecnicos/extra-jobs', label: 'Trabajos Extra', icon: Briefcase },
     { href: '/GestionTecnicos/part-orders', label: 'Pedidos de Repuestos', icon: ShoppingBag },
     { href: '/GestionTecnicos/inventory', label: 'Inventario', icon: Package },
     { href: '/GestionTecnicos/customers', label: 'Clientes', icon: Users },

@@ -213,3 +213,59 @@ export interface PartOrder {
   updated_at?: string;
 }
 
+// ==========================================
+// TRABAJOS EXTRA / SERVICIOS EN TERRENO
+// ==========================================
+
+export type ExtraJobStatus =
+  | 'presupuestado'
+  | 'agendado'
+  | 'en_progreso'
+  | 'completado'
+  | 'cobrado'
+  | 'cancelado';
+
+export interface ExtraJob {
+  id: string;
+  shop_id: string;
+  job_code: string;
+  customer_id: string;
+  technician_id?: string | null;
+  title: string;
+  description?: string | null;
+  location_address?: string | null;
+  scheduled_at?: string | null;
+  status: ExtraJobStatus;
+  labor_price: number;
+  materials_price: number;
+  total_price: number;
+  advance_payment: number;
+  payment_method?: string | null;
+  technical_notes?: string | null;
+  created_at: string;
+  updated_at?: string;
+  // Joined relation fields
+  customer_name?: string;
+  customer_phone?: string;
+  customer_document_id?: string;
+  customer_email?: string;
+  technician_name?: string;
+}
+
+export interface CreateExtraJobInput {
+  customer_id: string;
+  title: string;
+  description?: string;
+  location_address?: string;
+  scheduled_at?: string | null;
+  status?: ExtraJobStatus;
+  labor_price?: number;
+  materials_price?: number;
+  total_price?: number;
+  advance_payment?: number;
+  payment_method?: string;
+  technical_notes?: string;
+  technician_id?: string | null;
+}
+
+

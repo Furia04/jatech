@@ -524,3 +524,63 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION public.get_public_order_tracking(TEXT) TO anon, authenticated;
+
+-- =======================================================
+-- 11. MÓDULO DE TRABAJOS EXTRA / SERVICIOS EN TERRENO
+-- =======================================================
+
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'extra_job_status') THEN
+    CREATE TYPE extra_job_status AS ENUM (
+      'presupuestado',
+      'agendado',
+      'en_progreso',
+      'completado',
+      'cobrado',
+      'cancelado'
+    );
+  END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS extra_jobs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  job_code TEXT NOT NULL,
+  customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  technician_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  location_address TEXT,
+  scheduled_at TIMESTAMPTZ,
+  status extra_job_status DEFAULT 'presupuestado',
+  labor_price NUMERIC(10,2) DEFAULT 0.00,
+  materials_price NUMERIC(10,2) DEFAULT 0.00,
+  total_price NUMERIC(10,2) DEFAULT 0.00,
+  advance_payment NUMERIC(10,2) DEFAULT 0.00,
+  payment_method TEXT DEFAULT 'efectivo',
+  technical_notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS para extra_jobs
+ALTER TABLE extra_jobs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Superadmin Full Access Extra Jobs" ON extra_jobs;
+DROP POLICY IF EXISTS "Tenant Isolation Extra Jobs" ON extra_jobs;
+
+CREATE POLICY "Superadmin Full Access Extra Jobs" ON extra_jobs
+  FOR ALL
+  USING (public.is_superadmin())
+  WITH CHECK (public.is_superadmin());
+
+CREATE POLICY "Tenant Isolation Extra Jobs" ON extra_jobs
+  FOR ALL
+  USING (shop_id = public.get_current_shop_id() OR shop_id = auth.uid())
+  WITH CHECK (shop_id = public.get_current_shop_id() OR shop_id = auth.uid());
+
+CREATE INDEX IF NOT EXISTS idx_extra_jobs_shop_id ON extra_jobs(shop_id);
+CREATE INDEX IF NOT EXISTS idx_extra_jobs_customer_id ON extra_jobs(customer_id);
+CREATE INDEX IF NOT EXISTS idx_extra_jobs_status ON extra_jobs(status);
+

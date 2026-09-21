@@ -1,5 +1,5 @@
 import { supabase } from './client';
-import { Customer, Device, DeviceCategoryTemplate, InventoryItem, OrderSpare, PartOrder, ServiceOrder, Shop, UserProfile } from '@/types';
+import { Customer, Device, DeviceCategoryTemplate, ExtraJob, ExtraJobStatus, CreateExtraJobInput, InventoryItem, OrderSpare, PartOrder, ServiceOrder, Shop, UserProfile } from '@/types';
 
 // =======================================================
 // OBTENER PERFIL Y TALLER (TENANT) DEL USUARIO AUTENTICADO
@@ -1382,4 +1382,254 @@ export async function deletePartOrder(id: string): Promise<boolean> {
     return false;
   }
 }
+
+// =======================================================
+// SERVICIOS PARA TRABAJOS EXTRA / SERVICIOS EN TERRENO
+// =======================================================
+
+export async function fetchExtraJobs(): Promise<ExtraJob[]> {
+  try {
+    const profile = await getCurrentUserProfile();
+    if (!profile) return [];
+
+    const shopId = profile.shop_id || profile.id;
+    const { data: rawJobs, error } = await supabase
+      .from('extra_jobs')
+      .select('*')
+      .eq('shop_id', shopId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error al consultar extra_jobs en Supabase:', error);
+      return [];
+    }
+
+    if (!rawJobs || rawJobs.length === 0) return [];
+
+    // Enriquecer con clientes y técnicos
+    const customerIds = Array.from(new Set(rawJobs.map((j: any) => j.customer_id).filter(Boolean)));
+    const technicianIds = Array.from(new Set(rawJobs.map((j: any) => j.technician_id).filter(Boolean)));
+
+    const customerMap = new Map<string, any>();
+    const technicianMap = new Map<string, any>();
+
+    if (customerIds.length > 0) {
+      const { data: custs } = await supabase
+        .from('customers')
+        .select('id, full_name, phone, document_id, email')
+        .in('id', customerIds);
+      custs?.forEach((c: any) => customerMap.set(c.id, c));
+    }
+
+    if (technicianIds.length > 0) {
+      const { data: techs } = await supabase
+        .from('users')
+        .select('id, full_name, email')
+        .in('id', technicianIds);
+      techs?.forEach((t: any) => technicianMap.set(t.id, t));
+    }
+
+    return rawJobs.map((job: any) => {
+      const cust = customerMap.get(job.customer_id);
+      const tech = job.technician_id ? technicianMap.get(job.technician_id) : null;
+
+      return {
+        id: job.id,
+        shop_id: job.shop_id,
+        job_code: job.job_code || `EXT-${job.id.slice(0, 4).toUpperCase()}`,
+        customer_id: job.customer_id,
+        technician_id: job.technician_id,
+        title: job.title,
+        description: job.description || '',
+        location_address: job.location_address || '',
+        scheduled_at: job.scheduled_at,
+        status: job.status as ExtraJobStatus,
+        labor_price: Number(job.labor_price || 0),
+        materials_price: Number(job.materials_price || 0),
+        total_price: Number(job.total_price || 0),
+        advance_payment: Number(job.advance_payment || 0),
+        payment_method: job.payment_method || 'efectivo',
+        technical_notes: job.technical_notes || '',
+        created_at: job.created_at,
+        updated_at: job.updated_at,
+        customer_name: cust?.full_name || 'Cliente sin nombre',
+        customer_phone: cust?.phone || '',
+        customer_document_id: cust?.document_id || '',
+        customer_email: cust?.email || '',
+        technician_name: tech?.full_name || tech?.email || '',
+      };
+    });
+  } catch (err) {
+    console.error('Error crítico en fetchExtraJobs:', err);
+    return [];
+  }
+}
+
+export async function createExtraJob(input: CreateExtraJobInput): Promise<ExtraJob> {
+  try {
+    const profile = await getCurrentUserProfile();
+    if (!profile) throw new Error('Usuario no autenticado.');
+
+    const shopId = profile.shop_id || profile.id;
+
+    // Generar código correlativo EXT-001, EXT-002, etc.
+    const { data: existingJobs } = await supabase
+      .from('extra_jobs')
+      .select('job_code')
+      .eq('shop_id', shopId);
+
+    let nextNumber = 1;
+    if (existingJobs && existingJobs.length > 0) {
+      const numbers = existingJobs
+        .map((j) => {
+          const match = j.job_code?.match(/EXT-(\d+)/i);
+          return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter((n) => !isNaN(n));
+      if (numbers.length > 0) {
+        nextNumber = Math.max(...numbers) + 1;
+      } else {
+        nextNumber = existingJobs.length + 1;
+      }
+    }
+    const job_code = `EXT-${String(nextNumber).padStart(3, '0')}`;
+
+    const labor = Number(input.labor_price || 0);
+    const materials = Number(input.materials_price || 0);
+    const total = input.total_price !== undefined ? Number(input.total_price) : labor + materials;
+
+    const payload = {
+      shop_id: shopId,
+      job_code,
+      customer_id: input.customer_id,
+      technician_id: input.technician_id || null,
+      title: input.title.trim(),
+      description: input.description?.trim() || null,
+      location_address: input.location_address?.trim() || null,
+      scheduled_at: input.scheduled_at || null,
+      status: input.status || 'presupuestado',
+      labor_price: labor,
+      materials_price: materials,
+      total_price: total,
+      advance_payment: Number(input.advance_payment || 0),
+      payment_method: input.payment_method || 'efectivo',
+      technical_notes: input.technical_notes?.trim() || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: inserted, error } = await supabase
+      .from('extra_jobs')
+      .insert([payload])
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error al insertar extra_job en Supabase:', error);
+      throw error;
+    }
+
+    // Obtener datos del cliente para la respuesta
+    const { data: cust } = await supabase
+      .from('customers')
+      .select('full_name, phone, document_id, email')
+      .eq('id', inserted.customer_id)
+      .maybeSingle();
+
+    return {
+      id: inserted.id,
+      shop_id: inserted.shop_id,
+      job_code: inserted.job_code,
+      customer_id: inserted.customer_id,
+      technician_id: inserted.technician_id,
+      title: inserted.title,
+      description: inserted.description,
+      location_address: inserted.location_address,
+      scheduled_at: inserted.scheduled_at,
+      status: inserted.status as ExtraJobStatus,
+      labor_price: Number(inserted.labor_price || 0),
+      materials_price: Number(inserted.materials_price || 0),
+      total_price: Number(inserted.total_price || 0),
+      advance_payment: Number(inserted.advance_payment || 0),
+      payment_method: inserted.payment_method,
+      technical_notes: inserted.technical_notes,
+      created_at: inserted.created_at,
+      updated_at: inserted.updated_at,
+      customer_name: cust?.full_name || '',
+      customer_phone: cust?.phone || '',
+      customer_document_id: cust?.document_id || '',
+      customer_email: cust?.email || '',
+    };
+  } catch (err) {
+    console.error('Error en createExtraJob:', err);
+    throw err;
+  }
+}
+
+export async function updateExtraJob(
+  id: string,
+  updates: Partial<ExtraJob>
+): Promise<boolean> {
+  try {
+    const payload: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (updates.title !== undefined) payload.title = updates.title?.trim() || null;
+    if (updates.description !== undefined) payload.description = updates.description ? updates.description.trim() : null;
+    if (updates.location_address !== undefined) payload.location_address = updates.location_address ? updates.location_address.trim() : null;
+    if (updates.scheduled_at !== undefined) payload.scheduled_at = updates.scheduled_at;
+    if (updates.status !== undefined) payload.status = updates.status;
+    if (updates.labor_price !== undefined) payload.labor_price = Number(updates.labor_price);
+    if (updates.materials_price !== undefined) payload.materials_price = Number(updates.materials_price);
+    if (updates.total_price !== undefined) payload.total_price = Number(updates.total_price);
+    if (updates.advance_payment !== undefined) payload.advance_payment = Number(updates.advance_payment);
+    if (updates.payment_method !== undefined) payload.payment_method = updates.payment_method;
+    if (updates.technical_notes !== undefined) payload.technical_notes = updates.technical_notes ? updates.technical_notes.trim() : null;
+    if (updates.technician_id !== undefined) payload.technician_id = updates.technician_id;
+    if (updates.customer_id !== undefined) payload.customer_id = updates.customer_id;
+
+    const { error } = await supabase
+      .from('extra_jobs')
+      .update(payload)
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error al actualizar extra_job en Supabase:', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Error en updateExtraJob:', err);
+    return false;
+  }
+}
+
+export async function updateExtraJobStatus(
+  id: string,
+  status: ExtraJobStatus
+): Promise<boolean> {
+  return updateExtraJob(id, { status });
+}
+
+export async function deleteExtraJob(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('extra_jobs')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error al eliminar extra_job en Supabase:', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Error en deleteExtraJob:', err);
+    return false;
+  }
+}
+
 
