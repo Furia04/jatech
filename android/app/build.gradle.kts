@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
@@ -7,6 +10,22 @@ plugins {
 android {
     namespace = "com.example.jatechsat"
     compileSdk = 36
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localProperties.load(FileInputStream(localPropertiesFile))
+    }
+
+    val supabaseUrl = (localProperties.getProperty("SUPABASE_URL")
+        ?: project.findProperty("SUPABASE_URL") as? String
+        ?: System.getenv("NEXT_PUBLIC_SUPABASE_URL")
+        ?: "https://xyzcompany.supabase.co")
+
+    val supabaseAnonKey = (localProperties.getProperty("SUPABASE_ANON_KEY")
+        ?: project.findProperty("SUPABASE_ANON_KEY") as? String
+        ?: System.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+        ?: "public-anon-key")
+
     defaultConfig {
         applicationId = "com.example.jatechsat"
         minSdk = 29
@@ -14,8 +33,8 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        buildConfigField("String", "SUPABASE_URL", "\"https://xyzcompany.supabase.co\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"public-anon-key\"")
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
     }
 
     buildTypes {
