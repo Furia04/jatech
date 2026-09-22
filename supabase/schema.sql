@@ -28,10 +28,16 @@ BEGIN
       'entregado',
       'abandonado'
     );
-  ELSE
-    ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'entregado';
   END IF;
 END $$;
+
+ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'recibido';
+ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'en_revision';
+ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'esperando_repuesto';
+ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'esperando_cliente';
+ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'para_entregar';
+ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'entregado';
+ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'abandonado';
 
 -- 3. TABLA DE TALLERES (SHOPS / TENANTS)
 CREATE TABLE IF NOT EXISTS shops (

@@ -254,20 +254,29 @@ class SatRepository {
             }
 
             val orderId = if (order.id.isNotBlank()) order.id else java.util.UUID.randomUUID().toString()
-            postgrest.from("service_orders").insert(
-                mapOf(
-                    "id" to orderId,
-                    "shop_id" to order.shopId,
-                    "tracking_code" to order.trackingCode,
-                    "device_id" to devId,
-                    "customer_id" to custId,
-                    "status" to order.status,
-                    "reported_fault" to order.reportedFault,
-                    "estimated_cost" to (order.estimatedCost ?: 0.0),
-                    "final_price" to (order.finalPrice ?: (order.estimatedCost ?: 0.0)),
-                    "advance_payment" to (order.advancePayment ?: 0.0)
-                )
+            val orderMap = mutableMapOf<String, Any>(
+                "id" to orderId,
+                "shop_id" to order.shopId,
+                "tracking_code" to order.trackingCode,
+                "device_id" to devId,
+                "customer_id" to custId,
+                "status" to order.status,
+                "reported_fault" to order.reportedFault,
+                "estimated_cost" to (order.estimatedCost ?: 0.0),
+                "final_price" to (order.finalPrice ?: (order.estimatedCost ?: 0.0)),
+                "advance_payment" to (order.advancePayment ?: 0.0)
             )
+
+            try {
+                postgrest.from("service_orders").insert(orderMap)
+            } catch (ordEx: Exception) {
+                if (ordEx.message?.contains("order_status", ignoreCase = true) == true || ordEx.message?.contains("enum", ignoreCase = true) == true) {
+                    orderMap.remove("status")
+                    postgrest.from("service_orders").insert(orderMap)
+                } else {
+                    throw ordEx
+                }
+            }
 
             Result.success(order.copy(id = orderId))
         } catch (e: Exception) {

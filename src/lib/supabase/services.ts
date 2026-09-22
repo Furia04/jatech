@@ -525,19 +525,22 @@ export async function createServiceOrderWithDevice(orderPayload: {
   if (!ordErr1 && ordData1) {
     newOrder = ordData1;
   } else {
-    console.warn('Intento 1 de inserción de orden falló, reintentando con campos esenciales:', ordErr1?.message || ordErr1);
+    console.warn('Intento 1 de inserción de orden falló, reintentando:', ordErr1?.message || ordErr1);
+    const isEnumError = ordErr1?.message?.toLowerCase().includes('order_status') || ordErr1?.message?.toLowerCase().includes('enum') || ordErr1?.code === '22P02';
 
-    // Intento 2: Sin columnas auxiliares (por si la tabla no fue migrada con payment_method/advance_payment)
+    // Intento 2: Sin columnas auxiliares y omitiendo status si dio error de enum
     const essentialPayload: any = {
       shop_id: shopId,
       tracking_code: finalTrackingCode,
       device_id: deviceId,
       customer_id: customerId,
-      status: 'recibido',
       reported_fault: orderPayload.order.reported_fault || 'Revisión técnica',
       estimated_cost: Number(orderPayload.order.estimated_cost) || 0,
       final_price: Number(orderPayload.order.final_price) || 0,
     };
+    if (!isEnumError) {
+      essentialPayload.status = 'recibido';
+    }
 
     const { data: ordData2, error: ordErr2 } = await supabase
       .from('service_orders')
@@ -553,6 +556,7 @@ export async function createServiceOrderWithDevice(orderPayload: {
       // Intento 3: Código nuevo garantizado único y sin status enum restrictivo
       const uniqueCode = `#WO-${Date.now().toString().slice(-4)}${Math.floor(10 + Math.random() * 90)}`;
       essentialPayload.tracking_code = uniqueCode;
+      delete essentialPayload.status;
 
       const { data: ordData3, error: ordErr3 } = await supabase
         .from('service_orders')
