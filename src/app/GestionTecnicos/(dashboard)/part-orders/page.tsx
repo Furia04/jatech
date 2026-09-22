@@ -26,14 +26,20 @@ import {
   AlertCircle,
   Check,
   ChevronDown,
+  UserPlus,
+  UserCheck,
+  ChevronRight,
 } from 'lucide-react';
-import { PartOrder, PartOrderStatus, Shop, UserProfile } from '@/types';
+import { PartOrder, PartOrderStatus, Shop, UserProfile, Customer, Device } from '@/types';
 import { hasFinancialAccess } from '@/lib/permissions';
 import {
   fetchPartOrders,
   createPartOrder,
   updatePartOrder,
   deletePartOrder,
+  fetchCustomers,
+  createCustomer,
+  fetchCustomerDevicesAndOrders,
   fetchCurrentShop,
   getCurrentUserProfile,
 } from '@/lib/supabase/services';
@@ -44,6 +50,14 @@ export default function PartOrdersPage() {
   const [shop, setShop] = useState<Shop | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Clientes y Dispositivos para selección
+  const [clientMode, setClientMode] = useState<'new' | 'existing'>('new');
+  const [existingCustomers, setExistingCustomers] = useState<Customer[]>([]);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerDevices, setCustomerDevices] = useState<Device[]>([]);
+  const [loadingCustomerDevices, setLoadingCustomerDevices] = useState(false);
 
   // Filtros
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,14 +90,16 @@ export default function PartOrdersPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [profileData, shopData, ordersData] = await Promise.all([
+      const [profileData, shopData, ordersData, customersData] = await Promise.all([
         getCurrentUserProfile(),
         fetchCurrentShop(),
         fetchPartOrders(),
+        fetchCustomers(),
       ]);
       setUserProfile(profileData);
       setShop(shopData);
       setOrders(ordersData);
+      setExistingCustomers(customersData || []);
     } catch (err) {
       console.error('Error al cargar pedidos de repuestos:', err);
     } finally {
@@ -96,6 +112,58 @@ export default function PartOrdersPage() {
   }, []);
 
   const canSeeMoney = userProfile ? hasFinancialAccess(userProfile) : true;
+
+  // Filtrado de clientes predictivo
+  const filteredCustomers = existingCustomers.filter((c) => {
+    const q = customerSearchQuery.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      c.full_name.toLowerCase().includes(q) ||
+      (c.phone && c.phone.toLowerCase().includes(q)) ||
+      (c.document_id && c.document_id.toLowerCase().includes(q))
+    );
+  });
+
+  const handleSelectCustomer = async (cust: Customer) => {
+    setSelectedCustomer(cust);
+    setFormData((prev) => ({
+      ...prev,
+      customer_name: cust.full_name,
+      customer_phone: cust.phone || '',
+    }));
+    setCustomerSearchQuery('');
+
+    // Cargar dispositivos del cliente
+    try {
+      setLoadingCustomerDevices(true);
+      const { devices } = await fetchCustomerDevicesAndOrders(cust.id);
+      setCustomerDevices(devices || []);
+      if (devices && devices.length === 1) {
+        const devLabel = `${devices[0].brand} ${devices[0].model}`.trim() || devices[0].type || '';
+        setFormData((prev) => ({ ...prev, device_model: devLabel }));
+      }
+    } catch (err) {
+      console.warn('Error al cargar equipos de cliente:', err);
+    } finally {
+      setLoadingCustomerDevices(false);
+    }
+  };
+
+  const handleClearCustomer = () => {
+    setSelectedCustomer(null);
+    setCustomerDevices([]);
+    setFormData((prev) => ({
+      ...prev,
+      customer_name: '',
+      customer_phone: '',
+      device_model: '',
+    }));
+  };
+
+  const handleSelectDevice = (dev: Device) => {
+    const label = `${dev.brand} ${dev.model}`.trim() || dev.type || '';
+    setFormData((prev) => ({ ...prev, device_model: label }));
+  };
 
   // Métricas
   const totalOrders = orders.length;
@@ -124,6 +192,10 @@ export default function PartOrdersPage() {
   // Abrir Modal de Creación
   const handleOpenCreate = () => {
     setEditingOrderId(null);
+    setClientMode('new');
+    setSelectedCustomer(null);
+    setCustomerSearchQuery('');
+    setCustomerDevices([]);
     setFormData({
       customer_name: '',
       customer_phone: '',
@@ -141,6 +213,10 @@ export default function PartOrdersPage() {
   // Abrir Modal de Edición
   const handleOpenEdit = (order: PartOrder) => {
     setEditingOrderId(order.id);
+    setClientMode('new');
+    setSelectedCustomer(null);
+    setCustomerSearchQuery('');
+    setCustomerDevices([]);
     setFormData({
       customer_name: order.customer_name,
       customer_phone: order.customer_phone,
@@ -176,6 +252,21 @@ export default function PartOrdersPage() {
           prev.map((o) => (o.id === editingOrderId ? { ...o, ...formData } : o))
         );
       } else {
+        // Si es cliente nuevo y no existía, guardarlo en la base de clientes del taller
+        if (clientMode === 'new' && !selectedCustomer) {
+          try {
+            const newCust = await createCustomer({
+              full_name: formData.customer_name.trim(),
+              phone: formData.customer_phone.trim(),
+            });
+            if (newCust) {
+              setExistingCustomers((prev) => [newCust, ...prev]);
+            }
+          } catch (custErr) {
+            console.warn('No se pudo registrar en customers:', custErr);
+          }
+        }
+
         // Create
         const newOrder = await createPartOrder({
           shop_id: shop?.id || '',
@@ -606,36 +697,228 @@ export default function PartOrdersPage() {
                 </div>
               )}
 
-              {/* Cliente y Teléfono */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block font-label-caps text-xs text-on-surface-variant uppercase mb-1 font-bold">
-                    Nombre del Cliente *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ej: Carlos Gómez"
-                    value={formData.customer_name}
-                    onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-surface-container-highest border border-outline-variant rounded-xl text-xs sm:text-sm text-on-surface focus:outline-none focus:border-primary"
-                  />
-                </div>
+              {/* Sección de Cliente: Nuevo vs Existente */}
+              {!editingOrderId ? (
+                <div className="space-y-3 p-3.5 bg-surface-container-low border border-outline-variant/60 rounded-xl">
+                  <div className="flex items-center justify-between border-b border-outline-variant/40 pb-2">
+                    <label className="font-label-caps text-xs text-on-surface-variant uppercase font-bold flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-primary" /> Datos del Cliente
+                    </label>
+                    <div className="flex rounded-lg bg-surface-container-lowest p-0.5 border border-outline-variant/60">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setClientMode('new');
+                          handleClearCustomer();
+                        }}
+                        className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-md transition-all ${
+                          clientMode === 'new'
+                            ? 'bg-primary text-on-primary shadow-sm'
+                            : 'text-on-surface-variant hover:text-on-surface'
+                        }`}
+                      >
+                        <UserPlus className="w-3 h-3" /> Nuevo
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setClientMode('existing')}
+                        className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-md transition-all ${
+                          clientMode === 'existing'
+                            ? 'bg-primary text-on-primary shadow-sm'
+                            : 'text-on-surface-variant hover:text-on-surface'
+                        }`}
+                      >
+                        <UserCheck className="w-3 h-3" /> Existente
+                      </button>
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block font-label-caps text-xs text-on-surface-variant uppercase mb-1 font-bold">
-                    Teléfono / WhatsApp *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ej: 2646211278"
-                    value={formData.customer_phone}
-                    onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-surface-container-highest border border-outline-variant rounded-xl text-xs sm:text-sm text-on-surface font-mono focus:outline-none focus:border-primary"
-                  />
+                  {clientMode === 'existing' ? (
+                    /* MODO CLIENTE EXISTENTE */
+                    <div className="space-y-3">
+                      {!selectedCustomer ? (
+                        <div className="space-y-2">
+                          <label className="block font-bold text-on-surface-variant uppercase text-[10px]">
+                            Buscar Cliente Registrado
+                          </label>
+                          <div className="relative">
+                            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+                            <input
+                              type="text"
+                              value={customerSearchQuery}
+                              onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                              placeholder="Buscar por Nombre, DNI o Teléfono..."
+                              className="w-full bg-surface-container-highest border border-primary/50 focus:border-primary rounded-xl pl-8 pr-3 py-2 text-xs text-on-surface focus:ring-1 focus:ring-primary/50 font-medium"
+                              autoFocus
+                            />
+                          </div>
+
+                          {/* Dropdown predictivo de clientes */}
+                          {customerSearchQuery.trim() && (
+                            <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-lg max-h-48 overflow-y-auto divide-y divide-outline-variant/40">
+                              {filteredCustomers.length > 0 ? (
+                                filteredCustomers.map((cust) => (
+                                  <button
+                                    key={cust.id}
+                                    type="button"
+                                    onClick={() => handleSelectCustomer(cust)}
+                                    className="w-full text-left p-2.5 hover:bg-surface-container-high transition-colors flex items-center justify-between group text-xs"
+                                  >
+                                    <div>
+                                      <div className="font-bold text-on-surface flex items-center gap-1.5">
+                                        <span>{cust.full_name}</span>
+                                        {cust.document_id && (
+                                          <span className="font-mono text-[10px] text-on-surface-variant/80 bg-surface-container px-1.5 py-0.5 rounded">
+                                            DNI: {cust.document_id}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="font-mono text-[11px] text-on-surface-variant flex items-center gap-1 mt-0.5">
+                                        <Phone className="w-3 h-3 text-primary" /> {cust.phone || 'Sin teléfono'}
+                                      </div>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-on-surface-variant group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                                  </button>
+                                ))
+                              ) : (
+                                <div className="p-3 text-center text-on-surface-variant text-xs">
+                                  No se encontraron clientes con "{customerSearchQuery}"
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        /* Ficha del cliente seleccionado */
+                        <div className="space-y-2.5">
+                          <div className="p-3 bg-primary/10 border border-primary/30 rounded-xl flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs">
+                                {selectedCustomer.full_name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="font-bold text-xs text-on-surface flex items-center gap-1.5">
+                                  <span>{selectedCustomer.full_name}</span>
+                                  {selectedCustomer.document_id && (
+                                    <span className="font-mono text-[10px] text-on-surface-variant bg-surface-container px-1.5 py-0.5 rounded">
+                                      DNI: {selectedCustomer.document_id}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="font-mono text-[11px] text-on-surface-variant flex items-center gap-1">
+                                  <Phone className="w-3 h-3 text-primary" /> {selectedCustomer.phone}
+                                </div>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleClearCustomer}
+                              className="text-xs text-primary hover:underline font-semibold px-2 py-1"
+                            >
+                              Cambiar
+                            </button>
+                          </div>
+
+                          {/* Equipos registrados del cliente */}
+                          {loadingCustomerDevices ? (
+                            <div className="flex items-center gap-2 text-xs text-on-surface-variant py-1">
+                              <Loader2 className="w-3 h-3 animate-spin text-primary" /> Cargando equipos del cliente...
+                            </div>
+                          ) : customerDevices.length > 0 && (
+                            <div className="space-y-1 pt-1">
+                              <label className="block text-[11px] font-bold text-on-surface-variant uppercase">
+                                Equipos Registrados (Clic para autocompletar modelo):
+                              </label>
+                              <div className="flex flex-wrap gap-1.5">
+                                {customerDevices.map((dev) => {
+                                  const label = `${dev.brand} ${dev.model}`.trim() || dev.type;
+                                  const isSelected = formData.device_model === label;
+                                  return (
+                                    <button
+                                      key={dev.id}
+                                      type="button"
+                                      onClick={() => handleSelectDevice(dev)}
+                                      className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all flex items-center gap-1 ${
+                                        isSelected
+                                          ? 'bg-primary text-on-primary border-primary shadow-sm'
+                                          : 'bg-surface-container-highest border-outline-variant text-on-surface hover:border-primary/50'
+                                      }`}
+                                    >
+                                      <Smartphone className="w-3 h-3" /> {label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* MODO NUEVO CLIENTE */
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="block font-label-caps text-xs text-on-surface-variant uppercase mb-1 font-bold">
+                          Nombre del Cliente *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ej: Carlos Gómez"
+                          value={formData.customer_name}
+                          onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+                          className="w-full px-3.5 py-2 bg-surface-container-highest border border-outline-variant rounded-xl text-xs sm:text-sm text-on-surface focus:outline-none focus:border-primary"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-label-caps text-xs text-on-surface-variant uppercase mb-1 font-bold">
+                          Teléfono / WhatsApp *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ej: 2646211278"
+                          value={formData.customer_phone}
+                          onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+                          className="w-full px-3.5 py-2 bg-surface-container-highest border border-outline-variant rounded-xl text-xs sm:text-sm text-on-surface font-mono focus:outline-none focus:border-primary"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              ) : (
+                /* Modo Edición: inputs estándar */
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block font-label-caps text-xs text-on-surface-variant uppercase mb-1 font-bold">
+                      Nombre del Cliente *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej: Carlos Gómez"
+                      value={formData.customer_name}
+                      onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-surface-container-highest border border-outline-variant rounded-xl text-xs sm:text-sm text-on-surface focus:outline-none focus:border-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-label-caps text-xs text-on-surface-variant uppercase mb-1 font-bold">
+                      Teléfono / WhatsApp *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej: 2646211278"
+                      value={formData.customer_phone}
+                      onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-surface-container-highest border border-outline-variant rounded-xl text-xs sm:text-sm text-on-surface font-mono focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Repuesto y Modelo */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
