@@ -20,6 +20,7 @@ import {
   FolderOpen,
   MinusCircle,
   PlusCircle,
+  Trash2,
 } from 'lucide-react';
 import { InventoryItem, UserProfile } from '@/types';
 import { hasFinancialAccess } from '@/lib/permissions';
@@ -27,6 +28,7 @@ import {
   fetchInventory,
   createInventoryItem,
   updateInventoryStock,
+  deleteInventoryItem,
   getCurrentUserProfile,
 } from '@/lib/supabase/services';
 
@@ -50,6 +52,11 @@ export default function InventoryPage() {
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState('');
   const [stockUpdatingId, setStockUpdatingId] = useState<string | null>(null);
+
+  // Estado para Modal de Eliminación de Repuesto
+  const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const loadData = async () => {
     setLoading(true);
@@ -145,6 +152,21 @@ export default function InventoryPage() {
       console.error('Error al actualizar stock:', err);
     } finally {
       setStockUpdatingId(null);
+    }
+  };
+
+  const handleDeleteItem = async () => {
+    if (!itemToDelete) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await deleteInventoryItem(itemToDelete.id);
+      setInventory((prev) => prev.filter((i) => i.id !== itemToDelete.id));
+      setItemToDelete(null);
+    } catch (err: any) {
+      setDeleteError(err.message || 'Error al eliminar repuesto de la base de datos.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -343,6 +365,7 @@ export default function InventoryPage() {
                       <th className="p-4 text-center">En Equipos (Taller)</th>
                       <th className="p-4">Costo Compra</th>
                       <th className="p-4">Precio Venta</th>
+                      <th className="p-4 text-center">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-outline-variant/40 font-mono-data">
@@ -422,6 +445,18 @@ export default function InventoryPage() {
                           </td>
                           <td className="p-4 font-mono font-bold text-emerald-400 text-sm">
                             ${item.price.toLocaleString('es-AR')}
+                          </td>
+                          <td className="p-4 text-center">
+                            <button
+                              onClick={() => {
+                                setDeleteError('');
+                                setItemToDelete(item);
+                              }}
+                              className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors"
+                              title="Eliminar repuesto del inventario"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </td>
                         </tr>
                       );
@@ -589,6 +624,70 @@ export default function InventoryPage() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN DE REPUESTO */}
+      {itemToDelete && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-surface-container border border-outline-variant rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center border-b border-outline-variant/60 pb-3">
+              <h3 className="font-title-sm text-base font-bold text-error flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-error" /> Eliminar Repuesto del Inventario
+              </h3>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setItemToDelete(null)}
+                className="p-1 hover:bg-surface-container-highest rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-on-surface-variant" />
+              </button>
+            </div>
+
+            {deleteError && (
+              <div className="bg-error/10 border border-error/30 text-error p-3 rounded-lg text-xs font-semibold">
+                {deleteError}
+              </div>
+            )}
+
+            <p className="text-xs text-on-surface-variant leading-relaxed">
+              ¿Estás seguro de que deseas eliminar permanentemente el repuesto{' '}
+              <strong className="text-on-surface">{itemToDelete.name}</strong> (SKU:{' '}
+              <span className="font-mono text-primary font-bold">{itemToDelete.sku}</span>)?
+            </p>
+
+            {(itemToDelete.reserved_stock || 0) > 0 && (
+              <div className="bg-amber-500/10 border border-amber-500/30 text-amber-400 p-3 rounded-xl text-xs space-y-1">
+                <div className="font-bold flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4" /> Repuesto en uso activo
+                </div>
+                <p className="text-[11px] text-amber-300/90 leading-normal">
+                  Este repuesto tiene <strong>{itemToDelete.reserved_stock}</strong> unidad(es) asignadas a equipos en el taller. Al eliminarlo, las órdenes mantendrán su registro pero no estarán vinculadas al stock.
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-outline-variant/40">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setItemToDelete(null)}
+                className="px-4 py-2 text-xs font-title-sm text-on-surface-variant hover:bg-surface-container-highest rounded-xl disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={handleDeleteItem}
+                className="bg-error text-on-error font-title-sm text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-1.5 shadow hover:bg-error/90 transition-all disabled:opacity-50"
+              >
+                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                {deleting ? 'Eliminando...' : 'Sí, Eliminar'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

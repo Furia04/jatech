@@ -1023,6 +1023,24 @@ export async function updateInventoryStock(itemId: string, newStock: number): Pr
   }
 }
 
+export async function deleteInventoryItem(itemId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('inventory')
+      .delete()
+      .eq('id', itemId);
+
+    if (error) {
+      console.error('Error al eliminar item de inventario:', error);
+      throw error;
+    }
+    return true;
+  } catch (err) {
+    console.error('Error en deleteInventoryItem:', err);
+    throw err;
+  }
+}
+
 // =======================================================
 // GESTIÓN DE DISPOSITIVOS Y EQUIPOS (REAL SUPABASE)
 // =======================================================
