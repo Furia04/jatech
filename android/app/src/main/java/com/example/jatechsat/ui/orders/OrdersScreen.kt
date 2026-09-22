@@ -18,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.jatechsat.data.model.Customer
+import com.example.jatechsat.data.model.Device
 import com.example.jatechsat.data.model.ServiceOrder
 import com.example.jatechsat.data.supabase.SatRepository
 import com.example.jatechsat.theme.*
@@ -353,6 +355,13 @@ fun NewOrderDialog(
     onDismiss: () -> Unit,
     onOrderCreated: () -> Unit
 ) {
+    var isExistingClient by remember { mutableStateOf(false) }
+    var existingCustomers by remember { mutableStateOf<List<Customer>>(emptyList()) }
+    var customerSearchQuery by remember { mutableStateOf("") }
+    var selectedCustomer by remember { mutableStateOf<Customer?>(null) }
+    var customerDevices by remember { mutableStateOf<List<Device>>(emptyList()) }
+    var selectedDeviceId by remember { mutableStateOf<String?>(null) }
+
     var customerName by remember { mutableStateOf("") }
     var customerPhone by remember { mutableStateOf("") }
     var deviceInfo by remember { mutableStateOf("") }
@@ -362,6 +371,24 @@ fun NewOrderDialog(
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(shopId) {
+        coroutineScope.launch {
+            repository.fetchCustomers(shopId).onSuccess { list ->
+                existingCustomers = list
+            }
+        }
+    }
+
+    val filteredCustomers = existingCustomers.filter { c ->
+        if (customerSearchQuery.isBlank()) false
+        else {
+            val q = customerSearchQuery.lowercase()
+            c.fullName.lowercase().contains(q) ||
+            c.phone.lowercase().contains(q) ||
+            (c.documentId?.lowercase()?.contains(q) == true)
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -378,22 +405,165 @@ fun NewOrderDialog(
                     Text(it, color = AccentRed, fontSize = 12.sp)
                 }
 
-                OutlinedTextField(
-                    value = customerName,
-                    onValueChange = { customerName = it },
-                    label = { Text("Nombre del Cliente *") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                // Selector Modo Cliente
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(BackgroundDark, RoundedCornerShape(8.dp))
+                        .padding(2.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            isExistingClient = false
+                            selectedCustomer = null
+                            selectedDeviceId = null
+                            customerName = ""
+                            customerPhone = ""
+                            deviceInfo = ""
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (!isExistingClient) PrimaryCyan else androidx.compose.ui.graphics.Color.Transparent,
+                            contentColor = if (!isExistingClient) OnPrimaryDark else TextSecondary
+                        ),
+                        shape = RoundedCornerShape(6.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Nuevo", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
 
-                OutlinedTextField(
-                    value = customerPhone,
-                    onValueChange = { customerPhone = it },
-                    label = { Text("Teléfono / WhatsApp *") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    Button(
+                        onClick = { isExistingClient = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isExistingClient) PrimaryCyan else androidx.compose.ui.graphics.Color.Transparent,
+                            contentColor = if (isExistingClient) OnPrimaryDark else TextSecondary
+                        ),
+                        shape = RoundedCornerShape(6.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Existente", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                if (isExistingClient) {
+                    if (selectedCustomer == null) {
+                        OutlinedTextField(
+                            value = customerSearchQuery,
+                            onValueChange = { customerSearchQuery = it },
+                            label = { Text("Buscar cliente por Nombre o DNI...") },
+                            singleLine = true,
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = PrimaryCyan) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        if (filteredCustomers.isNotEmpty()) {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 140.dp)
+                                    .background(BackgroundDark, RoundedCornerShape(8.dp))
+                            ) {
+                                items(filteredCustomers) { cust ->
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                selectedCustomer = cust
+                                                customerName = cust.fullName
+                                                customerPhone = cust.phone
+                                                customerSearchQuery = ""
+                                                coroutineScope.launch {
+                                                    repository.fetchCustomerDevices(cust.id).onSuccess { devs ->
+                                                        customerDevices = devs
+                                                        if (devs.isNotEmpty()) {
+                                                            selectedDeviceId = devs[0].id
+                                                            deviceInfo = "${devs[0].brand} ${devs[0].model}".trim()
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            .padding(8.dp)
+                                    ) {
+                                        Text(cust.fullName, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        Text("📞 ${cust.phone}" + if (!cust.documentId.isNullOrBlank()) " · DNI: ${cust.documentId}" else "", color = TextSecondary, fontSize = 11.sp)
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Tarjeta de cliente seleccionado
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = BackgroundDark),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(selectedCustomer!!.fullName, fontWeight = FontWeight.Bold, color = PrimaryCyan, fontSize = 13.sp)
+                                    Text("📞 ${selectedCustomer!!.phone}", color = TextSecondary, fontSize = 11.sp)
+                                }
+                                IconButton(onClick = {
+                                    selectedCustomer = null
+                                    selectedDeviceId = null
+                                    customerDevices = emptyList()
+                                    deviceInfo = ""
+                                }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Cambiar", tint = AccentRed)
+                                }
+                            }
+                        }
+
+                        // Selector de dispositivos previos
+                        if (customerDevices.isNotEmpty()) {
+                            Text("Equipos del cliente:", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                customerDevices.forEach { dev ->
+                                    val isSelected = selectedDeviceId == dev.id
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = {
+                                            selectedDeviceId = dev.id
+                                            deviceInfo = "${dev.brand} ${dev.model}".trim()
+                                        },
+                                        label = { Text("${dev.brand} ${dev.model}", fontSize = 11.sp) }
+                                    )
+                                }
+                                FilterChip(
+                                    selected = selectedDeviceId == null,
+                                    onClick = {
+                                        selectedDeviceId = null
+                                        deviceInfo = ""
+                                    },
+                                    label = { Text("+ Otro", fontSize = 11.sp) }
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    OutlinedTextField(
+                        value = customerName,
+                        onValueChange = { customerName = it },
+                        label = { Text("Nombre del Cliente *") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = customerPhone,
+                        onValueChange = { customerPhone = it },
+                        label = { Text("Teléfono / WhatsApp *") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
                 OutlinedTextField(
                     value = deviceInfo,
@@ -451,7 +621,11 @@ fun NewOrderDialog(
                         status = "recibido"
                     )
                     coroutineScope.launch {
-                        repository.createOrder(order).onSuccess {
+                        repository.createOrder(
+                            order = order,
+                            existingCustomerId = if (isExistingClient) selectedCustomer?.id else null,
+                            existingDeviceId = if (isExistingClient) selectedDeviceId else null
+                        ).onSuccess {
                             onOrderCreated()
                         }.onFailure { err ->
                             errorMessage = err.message ?: "Error al guardar orden."

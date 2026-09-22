@@ -63,3 +63,14 @@ data class Customer(
     @SerialName("document_id") val documentId: String? = null,
     val email: String? = null
 )
+
+@Serializable
+data class Device(
+    val id: String,
+    @SerialName("shop_id") val shopId: String,
+    @SerialName("customer_id") val customerId: String,
+    val type: String = "Equipo",
+    val brand: String = "",
+    val model: String = "",
+    @SerialName("serial_number") val serialNumber: String? = null
+)

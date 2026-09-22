@@ -170,35 +170,90 @@ class SatRepository {
         }
     }
 
-    suspend fun createOrder(order: ServiceOrder): Result<ServiceOrder> = withContext(Dispatchers.IO) {
+    suspend fun fetchCustomers(shopId: String): Result<List<Customer>> = withContext(Dispatchers.IO) {
         try {
-            val custId = java.util.UUID.randomUUID().toString()
-            val devId = java.util.UUID.randomUUID().toString()
+            val list = postgrest.from("customers")
+                .select {
+                    filter {
+                        eq("shop_id", shopId)
+                    }
+                    order("full_name", order = Order.ASCENDING)
+                }
+                .decodeList<Customer>()
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun fetchCustomerDevices(customerId: String): Result<List<com.example.jatechsat.data.model.Device>> = withContext(Dispatchers.IO) {
+        try {
+            val raw = postgrest.from("devices")
+                .select {
+                    filter {
+                        eq("customer_id", customerId)
+                    }
+                    order("created_at", order = Order.DESCENDING)
+                }
+                .decodeList<kotlinx.serialization.json.JsonObject>()
+
+            val devs = raw.map { d ->
+                val id = d["id"]?.toString()?.trim('"') ?: ""
+                val shopId = d["shop_id"]?.toString()?.trim('"') ?: ""
+                val custId = d["customer_id"]?.toString()?.trim('"') ?: ""
+                val type = d["type"]?.toString()?.trim('"') ?: "Equipo"
+                val brand = d["brand"]?.toString()?.trim('"') ?: ""
+                val model = d["model"]?.toString()?.trim('"') ?: ""
+                val serial = d["serial_number"]?.toString()?.trim('"')
+                com.example.jatechsat.data.model.Device(
+                    id = id,
+                    shopId = shopId,
+                    customerId = custId,
+                    type = type,
+                    brand = brand,
+                    model = model,
+                    serialNumber = serial
+                )
+            }
+            Result.success(devs)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun createOrder(
+        order: ServiceOrder,
+        existingCustomerId: String? = null,
+        existingDeviceId: String? = null
+    ): Result<ServiceOrder> = withContext(Dispatchers.IO) {
+        try {
+            val custId = if (!existingCustomerId.isNullOrBlank()) existingCustomerId else java.util.UUID.randomUUID().toString()
+            if (existingCustomerId.isNullOrBlank()) {
+                postgrest.from("customers").insert(
+                    mapOf(
+                        "id" to custId,
+                        "shop_id" to order.shopId,
+                        "full_name" to (order.customerName ?: "Cliente"),
+                        "phone" to (order.customerPhone ?: "")
+                    )
+                )
+            }
+
+            val devId = if (!existingDeviceId.isNullOrBlank()) existingDeviceId else java.util.UUID.randomUUID().toString()
+            if (existingDeviceId.isNullOrBlank()) {
+                postgrest.from("devices").insert(
+                    mapOf(
+                        "id" to devId,
+                        "shop_id" to order.shopId,
+                        "customer_id" to custId,
+                        "type" to "Equipo",
+                        "brand" to (order.deviceInfo ?: "Equipo"),
+                        "model" to ""
+                    )
+                )
+            }
+
             val orderId = if (order.id.isNotBlank()) order.id else java.util.UUID.randomUUID().toString()
-
-            // 1. Insert Customer
-            postgrest.from("customers").insert(
-                mapOf(
-                    "id" to custId,
-                    "shop_id" to order.shopId,
-                    "full_name" to (order.customerName ?: "Cliente"),
-                    "phone" to (order.customerPhone ?: "")
-                )
-            )
-
-            // 2. Insert Device
-            postgrest.from("devices").insert(
-                mapOf(
-                    "id" to devId,
-                    "shop_id" to order.shopId,
-                    "customer_id" to custId,
-                    "type" to "Equipo",
-                    "brand" to (order.deviceInfo ?: "Equipo"),
-                    "model" to ""
-                )
-            )
-
-            // 3. Insert Service Order
             postgrest.from("service_orders").insert(
                 mapOf(
                     "id" to orderId,

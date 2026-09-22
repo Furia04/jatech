@@ -18,16 +18,27 @@ import {
   Camera,
   Wallet,
   MessageSquare,
+  UserPlus,
+  UserCheck,
+  History,
+  X,
+  ChevronRight,
+  Loader2,
 } from 'lucide-react';
-import { createServiceOrderWithDevice, getCurrentUserProfile } from '@/lib/supabase/services';
+import {
+  createServiceOrderWithDevice,
+  getCurrentUserProfile,
+  fetchCustomers,
+  fetchCustomerDevicesAndOrders,
+  fetchCurrentShop,
+} from '@/lib/supabase/services';
 import { supabase } from '@/lib/supabase/client';
-import { CustomFieldDefinition, DeviceCategoryTemplate, ServiceOrder, Shop } from '@/types';
+import { Customer, Device, CustomFieldDefinition, DeviceCategoryTemplate, ServiceOrder, Shop } from '@/types';
 import { CustomFieldsRenderer } from '@/components/orders/custom-fields-renderer';
 import { PatternLockInput } from '@/components/orders/pattern-lock-input';
 import { DeviceAutocomplete } from '@/components/orders/device-autocomplete';
 import { PhotoUploader } from '@/components/orders/photo-uploader';
 import { WhatsAppModal } from '@/components/orders/whatsapp-modal';
-import { fetchCurrentShop } from '@/lib/supabase/services';
 
 const DEFAULT_TEMPLATES: DeviceCategoryTemplate[] = [
   {
@@ -61,6 +72,16 @@ const DEFAULT_TEMPLATES: DeviceCategoryTemplate[] = [
 
 export default function NewOrderIntakePage() {
   const router = useRouter();
+
+  // Modo de Cliente: 'new' (Nuevo) vs 'existing' (Existente)
+  const [clientMode, setClientMode] = useState<'new' | 'existing'>('new');
+  const [existingCustomers, setExistingCustomers] = useState<Customer[]>([]);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerDevices, setCustomerDevices] = useState<Device[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [loadingCustomerDevices, setLoadingCustomerDevices] = useState(false);
 
   // Datos del Cliente con DNI / Documento
   const [customerName, setCustomerName] = useState('');
@@ -111,12 +132,17 @@ export default function NewOrderIntakePage() {
   useEffect(() => {
     async function loadShopAndTemplates() {
       try {
-        const [profile, realShop] = await Promise.all([
+        setLoadingCustomers(true);
+        const [profile, realShop, customersList] = await Promise.all([
           getCurrentUserProfile(),
           fetchCurrentShop(),
+          fetchCustomers(),
         ]);
         if (realShop) {
           setCurrentShop(realShop);
+        }
+        if (customersList) {
+          setExistingCustomers(customersList);
         }
         if (profile) {
           const targetShopId = profile.shop_id || profile.id;
@@ -132,10 +158,80 @@ export default function NewOrderIntakePage() {
         }
       } catch (e) {
         console.warn('Plantillas por defecto cargadas');
+      } finally {
+        setLoadingCustomers(false);
       }
     }
     loadShopAndTemplates();
   }, []);
+
+  const handleSelectCustomer = async (cust: Customer) => {
+    setSelectedCustomer(cust);
+    setCustomerName(cust.full_name);
+    setCustomerPhone(cust.phone);
+    setCustomerDocumentId(cust.document_id || '');
+    setCustomerEmail(cust.email || '');
+    setCustomerSearchQuery('');
+
+    // Cargar dispositivos anteriores de este cliente
+    try {
+      setLoadingCustomerDevices(true);
+      const { devices } = await fetchCustomerDevicesAndOrders(cust.id);
+      setCustomerDevices(devices || []);
+      if (devices && devices.length > 0) {
+        const firstDev = devices[0];
+        setSelectedDeviceId(firstDev.id);
+        setDeviceType(firstDev.type || 'Smartphone');
+        setDeviceBrand(firstDev.brand || '');
+        setDeviceModel(firstDev.model || '');
+        setSerialImei(firstDev.serial_number || '');
+      } else {
+        setSelectedDeviceId('');
+      }
+    } catch (err) {
+      console.warn('Error al cargar equipos de cliente:', err);
+    } finally {
+      setLoadingCustomerDevices(false);
+    }
+  };
+
+  const handleSelectDevice = (dev: Device) => {
+    setSelectedDeviceId(dev.id);
+    setDeviceType(dev.type || 'Smartphone');
+    setDeviceBrand(dev.brand || '');
+    setDeviceModel(dev.model || '');
+    setSerialImei(dev.serial_number || '');
+  };
+
+  const handleCreateNewDeviceForCustomer = () => {
+    setSelectedDeviceId('');
+    setDeviceBrand('');
+    setDeviceModel('');
+    setSerialImei('');
+  };
+
+  const handleClearCustomer = () => {
+    setSelectedCustomer(null);
+    setCustomerDevices([]);
+    setSelectedDeviceId('');
+    setCustomerName('');
+    setCustomerPhone('');
+    setCustomerDocumentId('');
+    setCustomerEmail('');
+    setDeviceBrand('');
+    setDeviceModel('');
+    setSerialImei('');
+  };
+
+  const filteredCustomers = existingCustomers.filter((c) => {
+    if (!customerSearchQuery.trim()) return false;
+    const q = customerSearchQuery.toLowerCase();
+    return (
+      c.full_name.toLowerCase().includes(q) ||
+      (c.document_id && c.document_id.toLowerCase().includes(q)) ||
+      c.phone.toLowerCase().includes(q)
+    );
+  });
 
   const activeTemplate = categoryTemplates.find(
     (t) => t.category_name.toLowerCase() === deviceType.toLowerCase() || deviceType.toLowerCase().includes(t.category_name.toLowerCase())
@@ -164,15 +260,18 @@ export default function NewOrderIntakePage() {
 
     setSaving(true);
     setSuccessMessage('');
+    setErrorMessage('');
 
     const newOrderPayload = {
       customer: {
+        id: clientMode === 'existing' && selectedCustomer ? selectedCustomer.id : undefined,
         full_name: customerName.trim(),
         phone: customerPhone.trim(),
         document_id: customerDocumentId.trim(),
         email: customerEmail.trim(),
       },
       device: {
+        id: selectedDeviceId || undefined,
         type: deviceType,
         brand: deviceBrand.trim(),
         model: deviceModel.trim(),
@@ -214,12 +313,14 @@ export default function NewOrderIntakePage() {
 
     const newOrderPayload = {
       customer: {
+        id: clientMode === 'existing' && selectedCustomer ? selectedCustomer.id : undefined,
         full_name: customerName.trim(),
         phone: customerPhone.trim(),
         document_id: customerDocumentId.trim(),
         email: customerEmail.trim(),
       },
       device: {
+        id: selectedDeviceId || undefined,
         type: deviceType,
         brand: deviceBrand.trim(),
         model: deviceModel.trim(),
@@ -279,12 +380,14 @@ export default function NewOrderIntakePage() {
 
     const newOrderPayload = {
       customer: {
+        id: clientMode === 'existing' && selectedCustomer ? selectedCustomer.id : undefined,
         full_name: customerName.trim(),
         phone: customerPhone.trim(),
         document_id: customerDocumentId.trim(),
         email: customerEmail.trim(),
       },
       device: {
+        id: selectedDeviceId || undefined,
         type: deviceType,
         brand: deviceBrand.trim(),
         model: deviceModel.trim(),
@@ -392,56 +495,219 @@ export default function NewOrderIntakePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Paso 1: Datos del Cliente */}
             <div className="bg-surface-container rounded-2xl border border-outline-variant p-6 flex flex-col relative group shadow-sm">
-              <div className="flex items-center gap-2 mb-4 border-b border-outline-variant/60 pb-3">
-                <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center font-label-caps text-xs font-bold">
-                  1
+              <div className="flex items-center justify-between mb-3 border-b border-outline-variant/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center font-label-caps text-xs font-bold">
+                    1
+                  </div>
+                  <h3 className="font-title-sm text-sm text-on-surface font-bold">
+                    Datos del Cliente
+                  </h3>
                 </div>
-                <h3 className="font-title-sm text-sm text-on-surface font-bold">
-                  Datos del Cliente
-                </h3>
+
+                {/* Tabs de Selección Nuevo vs Existente */}
+                <div className="flex rounded-lg bg-surface-container-lowest p-0.5 border border-outline-variant/60">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setClientMode('new');
+                      handleClearCustomer();
+                    }}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-md transition-all ${
+                      clientMode === 'new'
+                        ? 'bg-primary text-on-primary shadow-sm'
+                        : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                  >
+                    <UserPlus className="w-3.5 h-3.5" /> Nuevo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setClientMode('existing')}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-md transition-all ${
+                      clientMode === 'existing'
+                        ? 'bg-primary text-on-primary shadow-sm'
+                        : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                  >
+                    <UserCheck className="w-3.5 h-3.5" /> Existente
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-3 flex-1 text-xs">
-                <div>
-                  <label className="block font-bold text-on-surface-variant mb-1 uppercase text-[10px]">
-                    Nombre Completo *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Ej: Sarah Connor"
-                    className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2 text-xs text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/50"
-                  />
-                </div>
+                {clientMode === 'existing' ? (
+                  /* MODO CLIENTE EXISTENTE */
+                  <div className="space-y-3">
+                    {!selectedCustomer ? (
+                      <div className="space-y-2">
+                        <label className="block font-bold text-on-surface-variant uppercase text-[10px]">
+                          Buscar Cliente en el Taller
+                        </label>
+                        <div className="relative">
+                          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+                          <input
+                            type="text"
+                            value={customerSearchQuery}
+                            onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                            placeholder="Buscar por Nombre, DNI o Teléfono..."
+                            className="w-full bg-surface-container-lowest border border-primary/50 focus:border-primary rounded-xl pl-8 pr-3 py-2 text-xs text-on-surface focus:ring-1 focus:ring-primary/50 font-medium"
+                            autoFocus
+                          />
+                        </div>
 
-                <div>
-                  <label className="block font-bold text-on-surface-variant mb-1 uppercase text-[10px]">
-                    DNI / CUIT / Identificación
-                  </label>
-                  <input
-                    type="text"
-                    value={customerDocumentId}
-                    onChange={(e) => setCustomerDocumentId(e.target.value)}
-                    placeholder="Ej: 38912402"
-                    className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2 font-mono text-xs text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/50"
-                  />
-                </div>
+                        {/* Dropdown de resultados predictivos */}
+                        {customerSearchQuery.trim() && (
+                          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-lg max-h-56 overflow-y-auto divide-y divide-outline-variant/40">
+                            {filteredCustomers.length > 0 ? (
+                              filteredCustomers.map((cust) => (
+                                <button
+                                  key={cust.id}
+                                  type="button"
+                                  onClick={() => handleSelectCustomer(cust)}
+                                  className="w-full text-left p-3 hover:bg-surface-container-high transition-colors flex items-center justify-between group"
+                                >
+                                  <div>
+                                    <p className="font-bold text-on-surface group-hover:text-primary transition-colors">
+                                      {cust.full_name}
+                                    </p>
+                                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-on-surface-variant">
+                                      <span>📞 {cust.phone}</span>
+                                      {cust.document_id && (
+                                        <span className="px-1.5 py-0.2 bg-surface-container rounded border border-outline-variant/40 font-mono text-[10px]">
+                                          DNI: {cust.document_id}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <ChevronRight className="w-4 h-4 text-on-surface-variant group-hover:text-primary transition-colors" />
+                                </button>
+                              ))
+                            ) : (
+                              <div className="p-4 text-center text-on-surface-variant text-[11px]">
+                                No se encontraron clientes con "{customerSearchQuery}".
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* Ficha de Cliente Seleccionado */
+                      <div className="bg-surface-container-lowest border-2 border-primary/40 rounded-xl p-3.5 space-y-3 relative shadow-sm">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs">
+                              {selectedCustomer.full_name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-bold text-on-surface text-xs leading-tight">
+                                {selectedCustomer.full_name}
+                              </p>
+                              <p className="text-[11px] text-on-surface-variant mt-0.5">
+                                📞 {selectedCustomer.phone}
+                                {selectedCustomer.document_id && ` · DNI: ${selectedCustomer.document_id}`}
+                              </p>
+                            </div>
+                          </div>
 
-                <div>
-                  <label className="block font-bold text-on-surface-variant mb-1 uppercase text-[10px]">
-                    Teléfono (WhatsApp) *
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    placeholder="Ej: +54 9 11 4455 6677"
-                    className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2 font-mono text-xs text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/50"
-                  />
-                </div>
+                          <button
+                            type="button"
+                            onClick={handleClearCustomer}
+                            className="p-1 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-error transition-colors"
+                            title="Cambiar cliente"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* Selector de Dispositivos Previos del Cliente */}
+                        <div className="border-t border-outline-variant/60 pt-2.5 space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant">
+                            <span>Equipos del Cliente:</span>
+                            {loadingCustomerDevices && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
+                          </div>
+
+                          <div className="flex flex-wrap gap-1.5">
+                            {customerDevices.map((dev) => {
+                              const isSelected = selectedDeviceId === dev.id;
+                              return (
+                                <button
+                                  key={dev.id}
+                                  type="button"
+                                  onClick={() => handleSelectDevice(dev)}
+                                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 ${
+                                    isSelected
+                                      ? 'bg-primary text-on-primary border-primary shadow-sm'
+                                      : 'bg-surface-container hover:bg-surface-container-high text-on-surface border-outline-variant/60'
+                                  }`}
+                                >
+                                  <Smartphone className="w-3 h-3" />
+                                  <span>{dev.brand} {dev.model}</span>
+                                </button>
+                              );
+                            })}
+
+                            <button
+                              type="button"
+                              onClick={handleCreateNewDeviceForCustomer}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1 ${
+                                selectedDeviceId === ''
+                                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                                  : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant border-outline-variant/60'
+                              }`}
+                            >
+                              <span>+ Ingresar otro equipo</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* MODO NUEVO CLIENTE */
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block font-bold text-on-surface-variant mb-1 uppercase text-[10px]">
+                        Nombre Completo *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="Ej: Sarah Connor"
+                        className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2 text-xs text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-on-surface-variant mb-1 uppercase text-[10px]">
+                        DNI / CUIT / Identificación
+                      </label>
+                      <input
+                        type="text"
+                        value={customerDocumentId}
+                        onChange={(e) => setCustomerDocumentId(e.target.value)}
+                        placeholder="Ej: 38912402"
+                        className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2 font-mono text-xs text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-on-surface-variant mb-1 uppercase text-[10px]">
+                        Teléfono (WhatsApp) *
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                        placeholder="Ej: +54 9 11 4455 6677"
+                        className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2 font-mono text-xs text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/50"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

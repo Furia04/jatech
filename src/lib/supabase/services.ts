@@ -414,8 +414,8 @@ export async function fetchServiceOrders(): Promise<ServiceOrder[]> {
 }
 
 export async function createServiceOrderWithDevice(orderPayload: {
-  customer: { full_name: string; phone: string; document_id?: string; email?: string };
-  device: { type: string; brand: string; model: string; serial_number?: string; custom_attributes?: any };
+  customer: { id?: string; full_name: string; phone: string; document_id?: string; email?: string };
+  device: { id?: string; type: string; brand: string; model: string; serial_number?: string; custom_attributes?: any };
   order: {
     reported_fault: string;
     estimated_cost?: number;
@@ -435,8 +435,8 @@ export async function createServiceOrderWithDevice(orderPayload: {
   }
 
   // 2. Insertar o recuperar Cliente dentro del mismo taller
-  let customerId = '';
-  if (orderPayload.customer.document_id) {
+  let customerId = orderPayload.customer.id || '';
+  if (!customerId && orderPayload.customer.document_id) {
     const { data: existingCust } = await supabase
       .from('customers')
       .select('id')
@@ -469,24 +469,28 @@ export async function createServiceOrderWithDevice(orderPayload: {
     customerId = newCust.id;
   }
 
-  // 3. Insertar Dispositivo
-  const { data: newDevice, error: devErr } = await supabase
-    .from('devices')
-    .insert([{
-      shop_id: shopId,
-      customer_id: customerId,
-      type: orderPayload.device.type,
-      brand: orderPayload.device.brand,
-      model: orderPayload.device.model,
-      serial_number: orderPayload.device.serial_number || null,
-      custom_attributes: orderPayload.device.custom_attributes || {},
-    }])
-    .select()
-    .single();
+  // 3. Insertar o reutilizar Dispositivo
+  let deviceId = orderPayload.device.id || '';
+  if (!deviceId) {
+    const { data: newDevice, error: devErr } = await supabase
+      .from('devices')
+      .insert([{
+        shop_id: shopId,
+        customer_id: customerId,
+        type: orderPayload.device.type,
+        brand: orderPayload.device.brand,
+        model: orderPayload.device.model,
+        serial_number: orderPayload.device.serial_number || null,
+        custom_attributes: orderPayload.device.custom_attributes || {},
+      }])
+      .select()
+      .single();
 
-  if (devErr) {
-    console.error('Error al insertar equipo en Supabase:', devErr);
-    throw devErr;
+    if (devErr) {
+      console.error('Error al insertar equipo en Supabase:', devErr);
+      throw devErr;
+    }
+    deviceId = newDevice.id;
   }
 
   // 4. Insertar Orden de Servicio con el Código de Seguimiento Exacto
@@ -498,7 +502,7 @@ export async function createServiceOrderWithDevice(orderPayload: {
   const baseOrderPayload: any = {
     shop_id: shopId,
     tracking_code: finalTrackingCode,
-    device_id: newDevice.id,
+    device_id: deviceId,
     customer_id: customerId,
     status: 'recibido',
     reported_fault: orderPayload.order.reported_fault || 'Revisión técnica',
@@ -527,7 +531,7 @@ export async function createServiceOrderWithDevice(orderPayload: {
     const essentialPayload: any = {
       shop_id: shopId,
       tracking_code: finalTrackingCode,
-      device_id: newDevice.id,
+      device_id: deviceId,
       customer_id: customerId,
       status: 'recibido',
       reported_fault: orderPayload.order.reported_fault || 'Revisión técnica',
