@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserProfile } from '@/types';
+import { Shop, UserProfile } from '@/types';
 import { Logo } from '@/components/ui/logo';
 import {
   LayoutDashboard,
@@ -21,11 +21,12 @@ import {
 
 interface SidebarProps {
   user: UserProfile;
+  shop?: Shop | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function Sidebar({ user, isOpen, onClose }: SidebarProps) {
+export function Sidebar({ user, shop, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
 
   const navItems = [
@@ -54,7 +55,7 @@ export function Sidebar({ user, isOpen, onClose }: SidebarProps) {
         {/* Encabezado con Logo Minimalista */}
         <div className="p-4 border-b border-outline-variant flex items-center justify-between">
           <Link href="/GestionTecnicos/dashboard" onClick={onClose}>
-            <Logo size={36} textSubtitle="Sucursal Norte" />
+            <Logo size={36} textSubtitle={shop?.name || user.full_name || 'Software para técnicos'} />
           </Link>
 
           <button

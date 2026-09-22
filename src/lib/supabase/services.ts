@@ -10,24 +10,60 @@ export async function getCurrentUserProfile(): Promise<UserProfile | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
+    const cleanEmail = (user.email || '').toLowerCase().trim();
+
+    // 1. Intentar consultar el perfil de la tabla 'users'
     const { data, error } = await supabase
       .from('users')
       .select('*')
       .eq('id', user.id)
       .maybeSingle();
 
-    if (error || !data) {
-      return {
-        id: user.id,
-        email: user.email || '',
-        role: (user.user_metadata?.role as any) || 'owner',
-        shop_id: user.user_metadata?.shop_id || user.id,
-        full_name: user.user_metadata?.full_name || user.email,
-        can_view_financials: true,
-      };
+    let resolvedShopId = data?.shop_id || user.user_metadata?.shop_id;
+    let resolvedRole = data?.role || user.user_metadata?.role || 'owner';
+    let resolvedFullName = data?.full_name || user.user_metadata?.full_name || user.email;
+
+    // 2. Si shop_id no existe o es igual a user.id, verificar si hay un taller registrado con este email
+    if (!resolvedShopId || resolvedShopId === user.id) {
+      const { data: shopByEmail } = await supabase
+        .from('shops')
+        .select('id, name')
+        .or(`owner_email.eq.${cleanEmail},id.eq.${user.id}`)
+        .maybeSingle();
+
+      if (shopByEmail?.id) {
+        resolvedShopId = shopByEmail.id;
+      } else {
+        resolvedShopId = user.id;
+      }
     }
 
-    return data;
+    const resolvedProfile: UserProfile = {
+      id: user.id,
+      email: cleanEmail,
+      role: resolvedRole as any,
+      shop_id: resolvedShopId,
+      full_name: resolvedFullName,
+      can_view_financials: data?.can_view_financials ?? true,
+    };
+
+    // 3. Auto-sincronizar en la tabla 'users' si no existía o faltaba data
+    if (!data || data.shop_id !== resolvedShopId) {
+      try {
+        await supabase.from('users').upsert([{
+          id: user.id,
+          email: cleanEmail,
+          role: resolvedRole,
+          shop_id: resolvedShopId,
+          full_name: resolvedFullName,
+          can_view_financials: true,
+        }], { onConflict: 'id' });
+      } catch (syncErr) {
+        // Silencioso en caso de restricciones RLS
+      }
+    }
+
+    return resolvedProfile;
   } catch (err) {
     return null;
   }
@@ -39,13 +75,24 @@ export async function fetchCurrentShop(): Promise<Shop | null> {
     if (!profile) return null;
 
     const targetShopId = profile.shop_id || profile.id;
+    const cleanEmail = (profile.email || '').toLowerCase().trim();
+
     const { data: dbShop } = await supabase
       .from('shops')
       .select('*')
-      .or(`id.eq.${targetShopId},owner_email.eq.${profile.email}`)
+      .or(`id.eq.${targetShopId},owner_email.eq.${cleanEmail}`)
       .maybeSingle();
 
-    if (!dbShop) return null;
+    if (!dbShop) {
+      return {
+        id: targetShopId,
+        name: profile.full_name ? `Taller de ${profile.full_name}` : 'Mi Taller',
+        owner_email: profile.email,
+        subscription_status: 'active',
+        created_at: new Date().toISOString(),
+        settings: {},
+      };
+    }
 
     return {
       id: dbShop.id,
@@ -359,15 +406,7 @@ export async function fetchServiceOrders(): Promise<ServiceOrder[]> {
       custom_attributes: ord.devices?.custom_attributes || {},
     }));
 
-    const orderMap = new Map<string, ServiceOrder>();
-    dbOrders.forEach((o) => orderMap.set(o.tracking_code, o));
-    localOrders.forEach((o) => {
-      if (!orderMap.has(o.tracking_code)) {
-        orderMap.set(o.tracking_code, o);
-      }
-    });
-
-    return Array.from(orderMap.values());
+    return dbOrders;
   } catch (err) {
     console.error('Error general en fetchServiceOrders:', err);
     return [];

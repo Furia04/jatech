@@ -108,6 +108,7 @@ export default function DashboardLayout({
       {/* Sidebar Desplegable */}
       <Sidebar
         user={userProfile}
+        shop={userShop}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />
