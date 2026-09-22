@@ -89,14 +89,81 @@ class SatRepository {
     // SERVICE ORDERS
     suspend fun fetchOrders(shopId: String): Result<List<ServiceOrder>> = withContext(Dispatchers.IO) {
         try {
-            val orders = postgrest.from("service_orders")
+            val rawOrders = postgrest.from("service_orders")
                 .select {
                     filter {
                         eq("shop_id", shopId)
                     }
                     order("created_at", order = Order.DESCENDING)
                 }
-                .decodeList<ServiceOrder>()
+                .decodeList<kotlinx.serialization.json.JsonObject>()
+
+            val custIds = rawOrders.mapNotNull { it["customer_id"]?.toString()?.trim('"') }.distinct()
+            val devIds = rawOrders.mapNotNull { it["device_id"]?.toString()?.trim('"') }.distinct()
+
+            val custMap = mutableMapOf<String, Customer>()
+            if (custIds.isNotEmpty()) {
+                try {
+                    val customers = postgrest.from("customers").select {
+                        filter {
+                            isIn("id", custIds)
+                        }
+                    }.decodeList<Customer>()
+                    customers.forEach { custMap[it.id] = it }
+                } catch (_: Exception) {}
+            }
+
+            val devMap = mutableMapOf<String, String>()
+            if (devIds.isNotEmpty()) {
+                try {
+                    val devices = postgrest.from("devices").select {
+                        filter {
+                            isIn("id", devIds)
+                        }
+                    }.decodeList<kotlinx.serialization.json.JsonObject>()
+                    devices.forEach { d ->
+                        val id = d["id"]?.toString()?.trim('"') ?: ""
+                        val type = d["type"]?.toString()?.trim('"') ?: ""
+                        val brand = d["brand"]?.toString()?.trim('"') ?: ""
+                        val model = d["model"]?.toString()?.trim('"') ?: ""
+                        devMap[id] = "$type $brand $model".trim()
+                    }
+                } catch (_: Exception) {}
+            }
+
+            val orders = rawOrders.map { ord ->
+                val ordId = ord["id"]?.toString()?.trim('"') ?: ""
+                val cId = ord["customer_id"]?.toString()?.trim('"') ?: ""
+                val dId = ord["device_id"]?.toString()?.trim('"') ?: ""
+                val trackingCode = ord["tracking_code"]?.toString()?.trim('"') ?: ""
+                val status = ord["status"]?.toString()?.trim('"') ?: "recibido"
+                val reportedFault = ord["reported_fault"]?.toString()?.trim('"') ?: ""
+                val techDiag = ord["technical_diagnosis"]?.toString()?.trim('"')
+                val estCost = ord["estimated_cost"]?.toString()?.toDoubleOrNull()
+                val finalPr = ord["final_price"]?.toString()?.toDoubleOrNull()
+                val advPay = ord["advance_payment"]?.toString()?.toDoubleOrNull()
+                val createdAt = ord["created_at"]?.toString()?.trim('"')
+
+                val cust = custMap[cId]
+                val dev = devMap[dId]
+
+                ServiceOrder(
+                    id = ordId,
+                    shopId = shopId,
+                    trackingCode = trackingCode,
+                    status = status,
+                    reportedFault = reportedFault,
+                    technicalDiagnosis = techDiag,
+                    estimatedCost = estCost,
+                    finalPrice = finalPr,
+                    advancePayment = advPay,
+                    customerName = cust?.fullName ?: "Cliente",
+                    customerPhone = cust?.phone ?: "",
+                    deviceInfo = dev ?: "Equipo",
+                    createdAt = createdAt
+                )
+            }
+
             Result.success(orders)
         } catch (e: Exception) {
             Result.failure(e)
@@ -105,12 +172,49 @@ class SatRepository {
 
     suspend fun createOrder(order: ServiceOrder): Result<ServiceOrder> = withContext(Dispatchers.IO) {
         try {
-            val created = postgrest.from("service_orders")
-                .insert(order) {
-                    select()
-                }
-                .decodeSingle<ServiceOrder>()
-            Result.success(created)
+            val custId = java.util.UUID.randomUUID().toString()
+            val devId = java.util.UUID.randomUUID().toString()
+            val orderId = if (order.id.isNotBlank()) order.id else java.util.UUID.randomUUID().toString()
+
+            // 1. Insert Customer
+            postgrest.from("customers").insert(
+                mapOf(
+                    "id" to custId,
+                    "shop_id" to order.shopId,
+                    "full_name" to (order.customerName ?: "Cliente"),
+                    "phone" to (order.customerPhone ?: "")
+                )
+            )
+
+            // 2. Insert Device
+            postgrest.from("devices").insert(
+                mapOf(
+                    "id" to devId,
+                    "shop_id" to order.shopId,
+                    "customer_id" to custId,
+                    "type" to "Equipo",
+                    "brand" to (order.deviceInfo ?: "Equipo"),
+                    "model" to ""
+                )
+            )
+
+            // 3. Insert Service Order
+            postgrest.from("service_orders").insert(
+                mapOf(
+                    "id" to orderId,
+                    "shop_id" to order.shopId,
+                    "tracking_code" to order.trackingCode,
+                    "device_id" to devId,
+                    "customer_id" to custId,
+                    "status" to order.status,
+                    "reported_fault" to order.reportedFault,
+                    "estimated_cost" to (order.estimatedCost ?: 0.0),
+                    "final_price" to (order.finalPrice ?: (order.estimatedCost ?: 0.0)),
+                    "advance_payment" to (order.advancePayment ?: 0.0)
+                )
+            )
+
+            Result.success(order.copy(id = orderId))
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -97,6 +97,7 @@ export default function NewOrderIntakePage() {
 
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const [ticketCode] = useState(`WO-${Math.floor(1000 + Math.random() * 9000)}`);
   const [todayDate] = useState(new Date().toLocaleDateString('es-AR'));
 
@@ -191,71 +192,14 @@ export default function NewOrderIntakePage() {
 
     try {
       const savedOrder = await createServiceOrderWithDevice(newOrderPayload);
-      const localOrderObj: ServiceOrder = {
-        id: savedOrder?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '00000000-0000-4000-8000-' + String(Date.now()).padStart(12, '0')),
-        shop_id: savedOrder?.shop_id || 'local-shop',
-        tracking_code: `#${ticketCode}`,
-        device_id: savedOrder?.device_id || `dev-${Date.now()}`,
-        customer_id: savedOrder?.customer_id || `cust-${Date.now()}`,
-        customer_name: customerName.trim(),
-        customer_phone: customerPhone.trim(),
-        customer_document_id: customerDocumentId.trim(),
-        device_info: `${deviceType} · ${deviceBrand.trim()} ${deviceModel.trim()}`,
-        status: 'recibido',
-        reported_fault: faultDescription.trim(),
-        estimated_cost: numEstimatedCost,
-        final_price: numEstimatedCost,
-        advance_payment: numAdvancePayment,
-        payment_method: paymentMethod,
-        device_photos: devicePhotos,
-        created_at: savedOrder?.created_at || new Date().toISOString(),
-        custom_attributes: { unlock_pattern: unlockPattern, ...customAttrValues },
-      };
 
-      try {
-        const storedStr = localStorage.getItem('prorepair_local_orders');
-        const existing = storedStr ? JSON.parse(storedStr) : [];
-        const filtered = existing.filter((o: any) => o.tracking_code !== `#${ticketCode}` && o.id !== localOrderObj.id);
-        localStorage.setItem('prorepair_local_orders', JSON.stringify([localOrderObj, ...filtered]));
-      } catch (e) {}
-
-      setSuccessMessage('¡Orden de servicio guardada exitosamente! Redirigiendo...');
+      setSuccessMessage('¡Orden de servicio guardada exitosamente en la nube! Redirigiendo...');
       setTimeout(() => {
         router.push('/GestionTecnicos/orders');
       }, 800);
-    } catch (err) {
-      console.warn('Guardado local de emergencia realizado:', err);
-      const localOrderObj: ServiceOrder = {
-        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '00000000-0000-4000-8000-' + String(Date.now()).padStart(12, '0'),
-        shop_id: 'local-shop',
-        tracking_code: `#${ticketCode}`,
-        device_id: `dev-${Date.now()}`,
-        customer_id: `cust-${Date.now()}`,
-        customer_name: customerName.trim(),
-        customer_phone: customerPhone.trim(),
-        customer_document_id: customerDocumentId.trim(),
-        device_info: `${deviceType} · ${deviceBrand.trim()} ${deviceModel.trim()}`,
-        status: 'recibido',
-        reported_fault: faultDescription.trim(),
-        estimated_cost: numEstimatedCost,
-        final_price: numEstimatedCost,
-        advance_payment: numAdvancePayment,
-        payment_method: paymentMethod,
-        device_photos: devicePhotos,
-        created_at: new Date().toISOString(),
-        custom_attributes: { unlock_pattern: unlockPattern, ...customAttrValues },
-      };
-
-      try {
-        const storedStr = localStorage.getItem('prorepair_local_orders');
-        const existing = storedStr ? JSON.parse(storedStr) : [];
-        localStorage.setItem('prorepair_local_orders', JSON.stringify([localOrderObj, ...existing]));
-      } catch (e) {}
-
-      setSuccessMessage('¡Orden de servicio registrada exitosamente!');
-      setTimeout(() => {
-        router.push('/GestionTecnicos/orders');
-      }, 800);
+    } catch (err: any) {
+      console.error('Error al registrar orden:', err);
+      setErrorMessage(`Error al guardar la orden: ${err?.message || 'Error de conexión con la base de datos'}`);
     } finally {
       setSaving(false);
     }
@@ -266,6 +210,7 @@ export default function NewOrderIntakePage() {
 
     setSaving(true);
     setSuccessMessage('');
+    setErrorMessage('');
 
     const newOrderPayload = {
       customer: {
@@ -278,9 +223,8 @@ export default function NewOrderIntakePage() {
         type: deviceType,
         brand: deviceBrand.trim(),
         model: deviceModel.trim(),
-        serial_imei: serialImei.trim() || undefined,
-        powers_on: powersOn,
-        custom_attributes: { unlock_pattern: unlockPattern, ...customAttrValues },
+        serial_number: serialImei.trim() || undefined,
+        custom_attributes: { powers_on: powersOn, unlock_pattern: unlockPattern, ...customAttrValues },
       },
       order: {
         reported_fault: faultDescription.trim(),
@@ -294,12 +238,12 @@ export default function NewOrderIntakePage() {
 
     try {
       const savedOrder = await createServiceOrderWithDevice(newOrderPayload);
-      const localOrderObj: ServiceOrder = {
-        id: savedOrder?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '00000000-0000-4000-8000-' + String(Date.now()).padStart(12, '0')),
-        shop_id: savedOrder?.shop_id || 'local-shop',
-        tracking_code: `#${ticketCode}`,
-        device_id: savedOrder?.device_id || `dev-${Date.now()}`,
-        customer_id: savedOrder?.customer_id || `cust-${Date.now()}`,
+      const readyOrder: ServiceOrder = {
+        id: savedOrder?.id || '00000000-0000-4000-8000-' + String(Date.now()).padStart(12, '0'),
+        shop_id: savedOrder?.shop_id || 'taller',
+        tracking_code: savedOrder?.tracking_code || `#${ticketCode}`,
+        device_id: savedOrder?.device_id || 'dev',
+        customer_id: savedOrder?.customer_id || 'cust',
         customer_name: customerName.trim(),
         customer_phone: customerPhone.trim(),
         customer_document_id: customerDocumentId.trim(),
@@ -315,45 +259,11 @@ export default function NewOrderIntakePage() {
         custom_attributes: { unlock_pattern: unlockPattern, ...customAttrValues },
       };
 
-      try {
-        const storedStr = localStorage.getItem('prorepair_local_orders');
-        const existing = storedStr ? JSON.parse(storedStr) : [];
-        const filtered = existing.filter((o: any) => o.tracking_code !== `#${ticketCode}` && o.id !== localOrderObj.id);
-        localStorage.setItem('prorepair_local_orders', JSON.stringify([localOrderObj, ...filtered]));
-      } catch (e) {}
-
       setSuccessMessage('¡Orden registrada exitosamente! Preparando notificación de WhatsApp...');
-      setCreatedOrderForWhatsApp(localOrderObj);
-    } catch (err) {
-      console.warn('Guardado local de emergencia realizado:', err);
-      const localOrderObj: ServiceOrder = {
-        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '00000000-0000-4000-8000-' + String(Date.now()).padStart(12, '0'),
-        shop_id: 'local-shop',
-        tracking_code: `#${ticketCode}`,
-        device_id: `dev-${Date.now()}`,
-        customer_id: `cust-${Date.now()}`,
-        customer_name: customerName.trim(),
-        customer_phone: customerPhone.trim(),
-        customer_document_id: customerDocumentId.trim(),
-        device_info: `${deviceType} · ${deviceBrand.trim()} ${deviceModel.trim()}`,
-        status: 'recibido',
-        reported_fault: faultDescription.trim(),
-        estimated_cost: numEstimatedCost,
-        final_price: numEstimatedCost,
-        advance_payment: numAdvancePayment,
-        payment_method: paymentMethod,
-        device_photos: devicePhotos,
-        created_at: new Date().toISOString(),
-        custom_attributes: { unlock_pattern: unlockPattern, ...customAttrValues },
-      };
-
-      try {
-        const storedStr = localStorage.getItem('prorepair_local_orders');
-        const existing = storedStr ? JSON.parse(storedStr) : [];
-        localStorage.setItem('prorepair_local_orders', JSON.stringify([localOrderObj, ...existing]));
-      } catch (e) {}
-
-      setCreatedOrderForWhatsApp(localOrderObj);
+      setCreatedOrderForWhatsApp(readyOrder);
+    } catch (err: any) {
+      console.error('Error al registrar orden:', err);
+      setErrorMessage(`Error al guardar la orden: ${err?.message || 'Error en el servidor'}`);
     } finally {
       setSaving(false);
     }
@@ -365,6 +275,7 @@ export default function NewOrderIntakePage() {
     setPrintFormat(selectedFormat);
     setSaving(true);
     setSuccessMessage('');
+    setErrorMessage('');
 
     const newOrderPayload = {
       customer: {
@@ -392,68 +303,16 @@ export default function NewOrderIntakePage() {
     };
 
     try {
-      const savedOrder = await createServiceOrderWithDevice(newOrderPayload);
-      const localOrderObj: ServiceOrder = {
-        id: savedOrder?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '00000000-0000-4000-8000-' + String(Date.now()).padStart(12, '0')),
-        shop_id: savedOrder?.shop_id || 'local-shop',
-        tracking_code: `#${ticketCode}`,
-        device_id: savedOrder?.device_id || `dev-${Date.now()}`,
-        customer_id: savedOrder?.customer_id || `cust-${Date.now()}`,
-        customer_name: customerName.trim(),
-        customer_phone: customerPhone.trim(),
-        customer_document_id: customerDocumentId.trim(),
-        device_info: `${deviceType} · ${deviceBrand.trim()} ${deviceModel.trim()}`,
-        status: 'recibido',
-        reported_fault: faultDescription.trim(),
-        estimated_cost: numEstimatedCost,
-        final_price: numEstimatedCost,
-        advance_payment: numAdvancePayment,
-        payment_method: paymentMethod,
-        device_photos: devicePhotos,
-        created_at: savedOrder?.created_at || new Date().toISOString(),
-        custom_attributes: { unlock_pattern: unlockPattern, ...customAttrValues },
-      };
-
-      try {
-        const storedStr = localStorage.getItem('prorepair_local_orders');
-        const existing = storedStr ? JSON.parse(storedStr) : [];
-        const filtered = existing.filter((o: any) => o.tracking_code !== `#${ticketCode}` && o.id !== localOrderObj.id);
-        localStorage.setItem('prorepair_local_orders', JSON.stringify([localOrderObj, ...filtered]));
-      } catch (e) {}
-    } catch (err) {
-      console.warn('Guardado local de emergencia realizado:', err);
-      const localOrderObj: ServiceOrder = {
-        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '00000000-0000-4000-8000-' + String(Date.now()).padStart(12, '0'),
-        shop_id: 'local-shop',
-        tracking_code: `#${ticketCode}`,
-        device_id: `dev-${Date.now()}`,
-        customer_id: `cust-${Date.now()}`,
-        customer_name: customerName.trim(),
-        customer_phone: customerPhone.trim(),
-        customer_document_id: customerDocumentId.trim(),
-        device_info: `${deviceType} · ${deviceBrand.trim()} ${deviceModel.trim()}`,
-        status: 'recibido',
-        reported_fault: faultDescription.trim(),
-        estimated_cost: numEstimatedCost,
-        final_price: numEstimatedCost,
-        advance_payment: numAdvancePayment,
-        payment_method: paymentMethod,
-        device_photos: devicePhotos,
-        created_at: new Date().toISOString(),
-        custom_attributes: { unlock_pattern: unlockPattern, ...customAttrValues },
-      };
-
-      try {
-        const storedStr = localStorage.getItem('prorepair_local_orders');
-        const existing = storedStr ? JSON.parse(storedStr) : [];
-        localStorage.setItem('prorepair_local_orders', JSON.stringify([localOrderObj, ...existing]));
-      } catch (e) {}
-    } finally {
-      setSaving(false);
+      await createServiceOrderWithDevice(newOrderPayload);
       setTimeout(() => {
         window.print();
         router.push('/GestionTecnicos/orders');
       }, 300);
+    } catch (err: any) {
+      console.error('Error al registrar orden:', err);
+      setErrorMessage(`Error al guardar la orden: ${err?.message || 'Error en el servidor'}`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -517,6 +376,13 @@ export default function NewOrderIntakePage() {
       {successMessage && (
         <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-3 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-2 animate-in fade-in">
           <CheckCircle2 className="w-4 h-4" /> {successMessage}
+        </div>
+      )}
+
+      {/* Notificación de Error */}
+      {errorMessage && (
+        <div className="bg-error/10 border border-error/30 text-error p-3 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-2 animate-in fade-in">
+          <AlertCircle className="w-4 h-4" /> {errorMessage}
         </div>
       )}
 

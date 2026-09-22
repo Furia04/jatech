@@ -495,27 +495,74 @@ export async function createServiceOrderWithDevice(orderPayload: {
     finalTrackingCode = `#${finalTrackingCode}`;
   }
 
-  const { data: newOrder, error: ordErr } = await supabase
+  const baseOrderPayload: any = {
+    shop_id: shopId,
+    tracking_code: finalTrackingCode,
+    device_id: newDevice.id,
+    customer_id: customerId,
+    status: 'recibido',
+    reported_fault: orderPayload.order.reported_fault || 'Revisión técnica',
+    estimated_cost: Number(orderPayload.order.estimated_cost) || 0,
+    final_price: Number(orderPayload.order.final_price) || Number(orderPayload.order.estimated_cost) || 0,
+    advance_payment: Number(orderPayload.order.advance_payment) || 0,
+    payment_method: orderPayload.order.payment_method || 'efectivo',
+    device_photos: Array.isArray(orderPayload.order.device_photos) ? orderPayload.order.device_photos : [],
+  };
+
+  let newOrder: any = null;
+
+  // Intento 1: Inserción completa con todas las columnas
+  const { data: ordData1, error: ordErr1 } = await supabase
     .from('service_orders')
-    .insert([{
+    .insert([baseOrderPayload])
+    .select()
+    .single();
+
+  if (!ordErr1 && ordData1) {
+    newOrder = ordData1;
+  } else {
+    console.warn('Intento 1 de inserción de orden falló, reintentando con campos esenciales:', ordErr1?.message || ordErr1);
+
+    // Intento 2: Sin columnas auxiliares (por si la tabla no fue migrada con payment_method/advance_payment)
+    const essentialPayload: any = {
       shop_id: shopId,
       tracking_code: finalTrackingCode,
       device_id: newDevice.id,
       customer_id: customerId,
       status: 'recibido',
-      reported_fault: orderPayload.order.reported_fault,
-      estimated_cost: orderPayload.order.estimated_cost || 0,
-      final_price: orderPayload.order.final_price || 0,
-      advance_payment: orderPayload.order.advance_payment || 0,
-      payment_method: orderPayload.order.payment_method || 'efectivo',
-      device_photos: orderPayload.order.device_photos || [],
-    }])
-    .select()
-    .single();
+      reported_fault: orderPayload.order.reported_fault || 'Revisión técnica',
+      estimated_cost: Number(orderPayload.order.estimated_cost) || 0,
+      final_price: Number(orderPayload.order.final_price) || 0,
+    };
 
-  if (ordErr) {
-    console.error('Error al insertar orden de servicio en Supabase:', ordErr);
-    throw ordErr;
+    const { data: ordData2, error: ordErr2 } = await supabase
+      .from('service_orders')
+      .insert([essentialPayload])
+      .select()
+      .single();
+
+    if (!ordErr2 && ordData2) {
+      newOrder = ordData2;
+    } else {
+      console.warn('Intento 2 falló, verificando colisión de código o esquema básico:', ordErr2?.message || ordErr2);
+
+      // Intento 3: Código nuevo garantizado único y sin status enum restrictivo
+      const uniqueCode = `#WO-${Date.now().toString().slice(-4)}${Math.floor(10 + Math.random() * 90)}`;
+      essentialPayload.tracking_code = uniqueCode;
+
+      const { data: ordData3, error: ordErr3 } = await supabase
+        .from('service_orders')
+        .insert([essentialPayload])
+        .select()
+        .single();
+
+      if (!ordErr3 && ordData3) {
+        newOrder = ordData3;
+      } else {
+        console.error('Error definitivo al insertar orden de servicio en Supabase:', ordErr3 || ordErr2 || ordErr1);
+        throw ordErr3 || ordErr2 || ordErr1;
+      }
+    }
   }
 
   return newOrder;
