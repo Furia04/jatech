@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Manual y Guía de Uso para Técnicos - JaTech SAT</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+    @page {
+      size: A4 portrait;
+      margin: 14mm 14mm 16mm 14mm;
+      @bottom-right {
+        content: counter(page);
+        font-family: 'Inter', sans-serif;
+        font-size: 8pt;
+        color: #64748b;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #1e293b;
+      background-color: #ffffff;
+      line-height: 1.5;
+      font-size: 9.5pt;
+    }
+
+    .page-break {
+      page-break-before: always;
+      break-before: page;
+    }
+
+    .avoid-break {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    /* COVER / HEADER */
+    .header-banner {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
+      padding: 24px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border-left: 6px solid #38bdf8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-banner h1 {
+      font-size: 18pt;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #f8fafc;
+    }
+
+    .header-banner p {
+      font-size: 10pt;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    .badge-ver {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid #38bdf8;
+      color: #38bdf8;
+      font-weight: 700;
+      font-size: 8pt;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+
+    /* TYPOGRAPHY */
+    h2 {
+      font-size: 13pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 18px;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 1.5px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h3 {
+      font-size: 10.5pt;
+      font-weight: 700;
+      color: #1e293b;
+      margin-top: 10px;
+      margin-bottom: 4px;
+    }
+
+    p {
+      margin-bottom: 8px;
+      color: #334155;
+      text-align: justify;
+    }
+
+    /* GRIDS & CARDS */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .card-title {
+      font-weight: 700;
+      font-size: 9pt;
+      color: #0f172a;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-desc {
+      font-size: 8.5pt;
+      color: #475569;
+    }
+
+    /* STEP BOX */
+    .step-box {
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      background: #ffffff;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .step-number {
+      background: #0284c7;
+      color: white;
+      font-weight: 800;
+      font-size: 8pt;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-title {
+      font-weight: 700;
+      font-size: 9.5pt;
+      color: #0f172a;
+    }
+
+    /* STATUS PILLS */
+    .status-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 7.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .status-recibido { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .status-revision { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .status-repuesto { background: #fae8ff; color: #86198f; border: 1px solid #f5d0fe; }
+    .status-cliente { background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
+    .status-entregar { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .status-entregado { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+    /* TABLES */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 12px;
+      font-size: 8.5pt;
+    }
+
+    th {
+      background: #f1f5f9;
+      color: #334155;
+      text-align: left;
+      padding: 6px 8px;
+      border: 1px solid #cbd5e1;
+      font-weight: 700;
+      font-size: 8pt;
+      text-transform: uppercase;
+    }
+
+    td {
+      padding: 6px 8px;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    /* ALERTS / CALLOUTS */
+    .alert-tip {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      margin: 8px 0;
+      font-size: 8.5pt;
+      color: #1e40af;
+    }
+
+    .alert-warning {
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      margin: 8px 0;
+      font-size: 8.5pt;
+      color: #92400e;
+    }
+
+    .code-tag {
+      font-family: 'JetBrains Mono', monospace;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-size: 8pt;
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    ul, ol {
+      margin-left: 18px;
+      margin-bottom: 8px;
+      font-size: 8.5pt;
+      color: #334155;
+    }
+
+    li {
+      margin-bottom: 3px;
+    }
+
+    .footer-note {
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 7.5pt;
+      color: #94a3b8;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BANNER PRINCIPAL -->
+  <div class="header-banner">
+    <div>
+      <h1>MANUAL DE PROCEDIMIENTOS Y GUÍA TÉCNICA</h1>
+      <p>Sistema de Gestión de Taller SAT • Plataforma Web & App Móvil Android</p>
+    </div>
+    <div>
+      <span class="badge-ver">Versión 2.0 • 2026</span>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 1: INTRODUCCIÓN Y ROLES -->
+  <div class="avoid-break">
+    <h2>1. Acceso, Seguridad y Perfil Técnico</h2>
+    <p>
+      El sistema cuenta con aislamiento estricto por taller (Multi-Tenant) y roles diferenciados para proteger la información operativa y financiera.
+    </p>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🔐 Rol Técnico (Operativo)</div>
+        <div class="card-desc">
+          Acceso a recepción, diagnóstico, actualización de órdenes, solicitud de repuestos y registro de trabajos extra. Los costos de compra de repuestos y márgenes de ganancia global se encuentran protegidos para resguardar la privacidad financiera del taller.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📱 App Android & Panel Web</div>
+        <div class="card-desc">
+          Los técnicos pueden operar desde la computadora del mesón de recepción o mediante la app Android nativa en sus teléfonos/tablets sincronizados en tiempo real mediante Supabase Cloud.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 2: RECEPCIÓN Y EMISIÓN DE ÓRDENES -->
+  <div class="avoid-break">
+    <h2>2. Recepción de Equipos y Nueva Orden de Servicio (SAT)</h2>
+    <p>
+      La recepción es el punto crítico para evitar reclamos y documentar el estado físico de los equipos que ingresan al taller.
+    </p>
+
+    <div class="step-box">
+      <div class="step-header">
+        <div class="step-number">1</div>
+        <div class="step-title">Selección de Cliente (Nuevo vs. Existente)</div>
+      </div>
+      <p>
+        En la cabecera de la ficha del cliente, puedes elegir entre <strong>"Nuevo Cliente"</strong> o <strong>"Cliente Existente"</strong>:
+      </p>
+      <ul>
+        <li><strong>Nuevo Cliente:</strong> Ingresa Nombre completo, Teléfono de WhatsApp y opcionalmente DNI/Documento. El cliente se registrará automáticamente en la base del taller.</li>
+        <li><strong>Cliente Existente:</strong> Escribe su Nombre, Teléfono o DNI en el buscador predictivo. Al hacer clic, sus datos se autocompletan y se cargan sus equipos registrados previamente para asociarlos con 1 clic.</li>
+      </ul>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <div class="step-number">2</div>
+        <div class="step-title">Inspección Física y Registro del Dispositivo</div>
+      </div>
+      <ul>
+        <li><strong>Rubro / Categoría:</strong> Smartphone, Computadora / Laptop, Automotor / ECU, etc.</li>
+        <li><strong>Marca y Modelo:</strong> Selecciona de la lista inteligente o escribe el modelo exacto.</li>
+        <li><strong>Falla Reportada:</strong> Describe con exactitud el problema manifestado por el cliente.</li>
+        <li><strong>Patrón o Clave:</strong> Dibuja el patrón táctil en la grilla interactiva (1 a 9) o escribe el PIN.</li>
+        <li><strong>Fotos de Recepción:</strong> Toma fotos de rayones, golpes previos, roturas de pantalla o faltantes para respaldar al taller.</li>
+      </ul>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <div class="step-number">3</div>
+        <div class="step-title">Presupuesto Estimado, Seña e Impresión de Comprobante</div>
+      </div>
+      <ul>
+        <li><strong>Seña / Anticipo:</strong> Registra si el cliente deja dinero a cuenta y el medio de pago (Efectivo, Transferencia, Tarjeta).</li>
+        <li><strong>Impresión Comanda Térmica (80mm):</strong> Genera el ticket para entregar al cliente y pegar en el equipo con el Código de Seguimiento <span class="code-tag">#WO-XXXX</span> y código QR de consulta.</li>
+        <li><strong>Envío por WhatsApp:</strong> Envía el mensaje de bienvenida y el enlace directo de seguimiento público con un solo clic.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- SECCIÓN 3: MESA DE TRABAJO Y CICLO DE VIDA DE UNA REPARACIÓN -->
+  <div class="avoid-break">
+    <h2>3. Ciclo de Vida y Estados de una Orden de Servicio</h2>
+    <p>
+      Cada equipo debe transitar por los estados oficiales del sistema para mantener sincronizado al cliente en el portal público y al equipo de trabajo:
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 25%;">Estado del Sistema</th>
+          <th style="width: 35%;">Acción Técnica Requerida</th>
+          <th style="width: 40%;">Efecto en el Portal / Cliente</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="status-pill status-recibido">Recibido</span></td>
+          <td>Equipo ingresado en mesón de entrada pendiente de peritaje.</td>
+          <td>Paso 1: Notifica recepción y asignación de código.</td>
+        </tr>
+        <tr>
+          <td><span class="status-pill status-revision">En Revisión</span></td>
+          <td>Técnico en banco de pruebas desmontando y diagnosticando.</td>
+          <td>Paso 2: Informa que el laboratorio está evaluando la falla.</td>
+        </tr>
+        <tr>
+          <td><span class="status-pill status-repuesto">Esperando Repuesto</span></td>
+          <td>Se solicitó repuesto a distribuidor o importador.</td>
+          <td>Informa demora justificada por envío de repuesto.</td>
+        </tr>
+        <tr>
+          <td><span class="status-pill status-cliente">Esperando Cliente</span></td>
+          <td>Presupuesto emitido o consulta técnica pendiente de respuesta.</td>
+          <td>Alerta al cliente para confirmar presupuesto o clave.</td>
+        </tr>
+        <tr>
+          <td><span class="status-pill status-entregar">Para Entregar / Listo</span></td>
+          <td>Reparación concluida y superado el test de control de calidad.</td>
+          <td>Paso 3: Avisa al cliente que puede retirar el equipo.</td>
+        </tr>
+        <tr>
+          <td><span class="status-pill status-entregado">Entregado</span></td>
+          <td>Equipo retirado, cobrado y garantía activada.</td>
+          <td>Paso 4: Cierra la orden y emite comprobante de entrega.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="alert-tip">
+      <strong>💡 Consejo de Taller:</strong> Al pasar una orden a <strong>"Para Entregar"</strong> o <strong>"Entregado"</strong>, utiliza la calculadora de presupuesto para descontar automáticamente los repuestos del inventario que fueron instalados en el equipo.
+    </div>
+  </div>
+
+  <!-- SECCIÓN 4: INVENTARIO Y ENCARGOS DE REPUESTOS -->
+  <div class="avoid-break">
+    <h2>4. Gestión de Repuestos, Stock y Pedidos a Proveedores</h2>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📦 Inventario de Taller</div>
+        <ul>
+          <li><strong>Stock Físico vs. Reservado:</strong> El sistema distingue el stock disponible en estantería del stock "en custodia" (instalado en equipos en reparación).</li>
+          <li><strong>Ajustes Rápidos:</strong> Puedes sumar o descontar stock con los botones <span class="code-tag">+</span> y <span class="code-tag">-</span> en tiempo real.</li>
+          <li><strong>Eliminación Segura:</strong> Si un repuesto se descontinúa, usa el botón de papelera con confirmación.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🛍️ Pedidos de Repuestos (Encargos)</div>
+        <ul>
+          <li><strong>Vincular Cliente:</strong> Selecciona cliente nuevo o existente mediante el buscador en tiempo real.</li>
+          <li><strong>Autocompletar Modelo:</strong> Al elegir un cliente habitual, haz clic en el chip de su equipo para cargar el modelo exacto.</li>
+          <li><strong>Avisar Llegada:</strong> Cuando el repuesto arriba al taller, cambia el estado a "Llegó al Taller" para abrir el WhatsApp automático y coordinar el turno de colocación.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 5: TRABAJOS EXTRA Y PRESUPUESTOS EN DOMICILIO -->
+  <div class="avoid-break">
+    <h2>5. Trabajos Extra y Visitas Técnicas</h2>
+    <p>
+      Para servicios a domicilio, instalaciones de cámaras, redes, formateos o mantenimientos que no correspondan a un dispositivo dejado en mesón:
+    </p>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📝 Código EXT-00X</div>
+        <div class="card-desc">Genera un código correlativo único por servicio para control de caja y recibos.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📍 Domicilio y Fecha</div>
+        <div class="card-desc">Indica dirección de visita técnica, horario pactado y técnico asignado.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">💵 Desglose de Precios</div>
+        <div class="card-desc">Mano de obra + materiales + seña recibida y saldo pendiente al finalizar.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 6: PROTOCOLO DE CALIDAD Y BUENAS PRÁCTICAS -->
+  <div class="avoid-break">
+    <h2>6. Protocolo de Calidad y Entrega al Cliente</h2>
+    <ol>
+      <li><strong>Checklist Previo a la Entrega:</strong> Verificar encendido, carga, táctil, cámaras, audio y Wi-Fi antes de cerrar la orden.</li>
+      <li><strong>Estipulación de Garantía:</strong> Cargar el plazo de garantía en días/meses (por ejemplo, 90 días sobre el repuesto cambiado).</li>
+      <li><strong>Cobro y Saldo Pendiente:</strong> Verificar que la seña esté correctamente restada del precio final antes de solicitar el pago restante.</li>
+      <li><strong>Entrega de Comprobante:</strong> Entregar la orden en estado <em>Entregado</em> para que el cliente cuente con su comprobante digital en el portal de seguimiento.</li>
+    </ol>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer-note">
+    Documento oficial de capacitación para el personal técnico • Sistema JaTech SAT • Confidencial - Uso Interno del Taller
+  </div>
+
+</body>
+</html>
