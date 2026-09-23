@@ -19,6 +19,8 @@ import {
   Zap,
   Loader2,
   RefreshCw,
+  Gift,
+  Sparkles,
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -62,6 +64,8 @@ export default function DashboardLayout({
           subscription_status: dbShop.subscription_status || 'pending_payment',
           plan_price: Number(dbShop.plan_price) || 20000,
           active: dbShop.active ?? false,
+          mp_preapproval_id: dbShop.mp_preapproval_id,
+          trial_ends_at: dbShop.trial_ends_at,
           created_at: dbShop.created_at || new Date().toISOString(),
         });
       } else {
@@ -86,8 +90,14 @@ export default function DashboardLayout({
     loadUserAndShopStatus();
   }, []);
 
+  const isTrialing = userShop?.subscription_status === 'trialing';
+  const trialDaysRemaining = userShop?.trial_ends_at
+    ? Math.max(0, Math.ceil((new Date(userShop.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 14;
+  const isTrialExpired = isTrialing && trialDaysRemaining <= 0;
+
   const isSuspended = userShop
-    ? (userShop.active === false && (userShop.subscription_status === 'canceled' || userShop.subscription_status === 'past_due'))
+    ? (userShop.active === false && (userShop.subscription_status === 'canceled' || userShop.subscription_status === 'past_due')) || isTrialExpired
     : false;
 
   const isPendingPayment = userShop
@@ -121,6 +131,40 @@ export default function DashboardLayout({
         />
 
         <main className="flex-1 overflow-y-auto p-container-margin bg-surface-container-lowest relative">
+          {/* BANNER INFORMATIVO DE PRUEBA GRATUITA (14 DÍAS) */}
+          {isTrialing && !isTrialExpired && (
+            <div className="mb-6 bg-gradient-to-r from-primary/20 via-primary/10 to-surface-container border border-primary/40 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md animate-in fade-in duration-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-primary/20 text-primary shrink-0 border border-primary/30">
+                  <Gift className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-title-sm text-sm font-bold text-on-surface">
+                      🎁 14 Días de Prueba Gratuita Activos
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                      {trialDaysRemaining} {trialDaysRemaining === 1 ? 'DÍA RESTANTE' : 'DÍAS RESTANTES'}
+                    </span>
+                  </div>
+                  <p className="font-body-sm text-xs text-on-surface-variant mt-0.5">
+                    Estás disfrutando de JaTech Pro con acceso total. Tu primer débito automático de $20.000 ARS será el{' '}
+                    <strong className="text-on-surface">
+                      {userShop?.trial_ends_at ? new Date(userShop.trial_ends_at).toLocaleDateString('es-AR') : 'al finalizar la prueba'}
+                    </strong>
+                    .
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/GestionTecnicos/checkout"
+                className="text-xs font-title-sm font-bold text-primary hover:text-primary-container shrink-0 underline underline-offset-4"
+              >
+                Administrar suscripción →
+              </Link>
+            </div>
+          )}
+
           {loading ? (
             <div className="p-16 flex flex-col items-center justify-center gap-3 text-on-surface-variant">
               <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -138,10 +182,12 @@ export default function DashboardLayout({
                   Acceso Restringido
                 </span>
                 <h2 className="font-display-lg text-2xl sm:text-3xl font-bold text-on-surface">
-                  Tu Taller Se Encuentra Suspendido
+                  {isTrialExpired ? 'Tu Periodo de Prueba de 14 Días ha Finalizado' : 'Tu Taller Se Encuentra Suspendido'}
                 </h2>
                 <p className="font-body-md text-xs sm:text-sm text-on-surface-variant max-w-md mx-auto">
-                  El acceso a las órdenes de servicio, inventario y datos ha sido suspendido desde el panel de administración por falta de pago o baja de membresía ($20.000 ARS/mes).
+                  {isTrialExpired
+                    ? 'Para continuar emitiendo órdenes de servicio y gestionando tu taller, activa tu membresía de $20.000 ARS/mes.'
+                    : 'El acceso a las órdenes de servicio, inventario y datos ha sido suspendido desde el panel de administración por falta de pago o baja de membresía ($20.000 ARS/mes).'}
                 </p>
               </div>
 
@@ -168,7 +214,7 @@ export default function DashboardLayout({
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Link
-                  href={`/checkout${userShop?.id ? `?shop_id=${userShop.id}` : ''}`}
+                  href={`/GestionTecnicos/checkout${userShop?.id ? `?shop_id=${userShop.id}` : ''}`}
                   className="flex-1 bg-primary text-on-primary hover:bg-primary-container font-title-sm text-xs font-bold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
                 >
                   <CreditCard className="w-4 h-4" /> Reactivar con Mercado Pago ($20.000)
@@ -193,26 +239,26 @@ export default function DashboardLayout({
               </div>
             </div>
           ) : isPendingPayment ? (
-            /* CASO 2: PANTALLA DE PRIMER PAGO PARA USUARIO NUEVO */
+            /* CASO 2: PANTALLA DE PRIMER PAGO O PRUEBA PARA USUARIO NUEVO */
             <div className="max-w-2xl mx-auto my-8 bg-surface-container border-2 border-primary/40 rounded-3xl p-8 shadow-2xl space-y-6 text-center animate-in zoom-in-95 duration-200">
               <div className="w-16 h-16 rounded-2xl bg-primary/20 text-primary flex items-center justify-center mx-auto border border-primary/30 shadow-inner">
-                <Zap className="w-8 h-8" />
+                <Gift className="w-8 h-8" />
               </div>
 
               <div className="space-y-2">
                 <span className="font-label-caps text-xs text-primary font-bold uppercase tracking-widest">
-                  Activación Inicial Requerida
+                  Comienza tu Prueba de 14 Días
                 </span>
                 <h2 className="font-display-lg text-2xl sm:text-3xl font-bold text-on-surface">
-                  ¡Bienvenido a JaTech!
+                  ¡Bienvenido a JaTech Pro!
                 </h2>
                 <p className="font-body-md text-xs sm:text-sm text-on-surface-variant max-w-md mx-auto">
-                  Para ingresar por primera vez a tu panel y emitir órdenes de servicio con comanda de 80mm, completa el pago inicial de tu membresía ($20.000 ARS/mes).
+                  Disfruta de 14 días sin cargo para probar el sistema de órdenes de servicio, comanda de 80mm e inventario. Solo requieres registrar tu tarjeta ($0 cobrados hoy).
                 </p>
               </div>
 
               <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/60 text-left space-y-3 font-mono-data text-xs">
-                <div className="text-on-surface-variant text-[10px] uppercase font-bold">Transferencia Bancaria Directa:</div>
+                <div className="text-on-surface-variant text-[10px] uppercase font-bold">O activa mediante Transferencia Bancaria:</div>
                 <div className="flex justify-between items-center bg-surface-container p-3 rounded-xl border border-outline-variant/40">
                   <div>
                     <div className="text-on-surface font-bold text-sm">JATECH.OPS.MP</div>
@@ -237,7 +283,7 @@ export default function DashboardLayout({
                   href="/GestionTecnicos/checkout"
                   className="flex-1 bg-primary text-on-primary hover:bg-primary-container font-title-sm text-xs font-bold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
                 >
-                  <CreditCard className="w-4 h-4" /> Ir a Pasarela de Pago ($20.000)
+                  <Zap className="w-4 h-4" /> Iniciar 14 Días Gratis ($0 Hoy)
                 </Link>
                 <button
                   onClick={loadUserAndShopStatus}

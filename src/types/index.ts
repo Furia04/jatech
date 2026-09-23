@@ -71,7 +71,7 @@ export interface UserProfile {
   can_view_financials: boolean;
 }
 
-export type SubscriptionStatus = 'active' | 'pending_payment' | 'past_due' | 'canceled';
+export type SubscriptionStatus = 'trialing' | 'active' | 'pending_payment' | 'past_due' | 'canceled';
 
 export interface Shop {
   id: string;
@@ -81,6 +81,7 @@ export interface Shop {
   plan_price?: number;
   active?: boolean;
   mp_preapproval_id?: string;
+  trial_ends_at?: string;
   created_at?: string;
   orders_count?: number;
   settings?: {

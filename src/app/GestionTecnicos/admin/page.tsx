@@ -26,6 +26,8 @@ import {
   Save,
   Store,
   Trash2,
+  Gift,
+  Sparkles,
 } from 'lucide-react';
 import { Shop } from '@/types';
 import { fetchAllShopsForAdmin, updateShopSubscriptionStatus, deleteShopAsAdmin } from '@/lib/supabase/services';
@@ -235,7 +237,8 @@ export default function SuperAdminDashboardPage() {
 
   const totalShops = shops.length;
   const activeShops = shops.filter((s) => s.active && s.subscription_status === 'active').length;
-  const pendingShops = shops.filter((s) => !s.active || s.subscription_status === 'pending_payment').length;
+  const trialShops = shops.filter((s) => s.subscription_status === 'trialing').length;
+  const pendingShops = shops.filter((s) => !s.active && s.subscription_status !== 'trialing').length;
   const estimatedMonthlySaaSRevenue = shops
     .filter((s) => s.active && s.subscription_status === 'active')
     .reduce((acc, s) => acc + (s.plan_price || 20000), 0);
@@ -312,13 +315,13 @@ export default function SuperAdminDashboardPage() {
           </div>
 
           <div className="bg-surface-container border border-outline-variant rounded-2xl p-5 space-y-2">
-            <span className="font-label-caps text-xs text-amber-400 uppercase font-semibold">
-              PENDIENTES DE PAGO / SUSPENDIDOS
+            <span className="font-label-caps text-xs text-purple-400 uppercase font-semibold">
+              EN PRUEBA (TRIAL 14 DÍAS)
             </span>
-            <div className="font-display-lg text-3xl font-bold text-amber-400 font-mono-data">
-              {pendingShops}
+            <div className="font-display-lg text-3xl font-bold text-purple-400 font-mono-data">
+              {trialShops}
             </div>
-            <span className="text-[11px] text-on-surface-variant">Acceso bloqueado en pasarela</span>
+            <span className="text-[11px] text-on-surface-variant">Periodo de prueba activo</span>
           </div>
 
           <div className="bg-surface-container border border-outline-variant rounded-2xl p-5 space-y-2">
@@ -408,7 +411,11 @@ export default function SuperAdminDashboardPage() {
                         {shop.orders_count ?? 0}
                       </td>
                       <td className="p-4">
-                        {shop.subscription_status === 'active' && shop.active ? (
+                        {shop.subscription_status === 'trialing' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold uppercase text-[10px]">
+                            <Gift className="w-3 h-3 text-purple-400" /> En Prueba ({shop.trial_ends_at ? Math.max(0, Math.ceil((new Date(shop.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 14}d)
+                          </span>
+                        ) : shop.subscription_status === 'active' && shop.active ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold uppercase text-[10px]">
                             <CheckCircle2 className="w-3 h-3" /> Pagado (${Number(shop.plan_price || 20000).toLocaleString('es-AR')})
                           </span>

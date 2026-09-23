@@ -99,7 +99,10 @@ export async function fetchCurrentShop(): Promise<Shop | null> {
       name: dbShop.name || 'Mi Taller',
       owner_email: dbShop.owner_email || profile.email,
       subscription_status: dbShop.subscription_status || 'active',
+      plan_price: Number(dbShop.plan_price) || 20000,
+      active: dbShop.active ?? true,
       mp_preapproval_id: dbShop.mp_preapproval_id,
+      trial_ends_at: dbShop.trial_ends_at,
       created_at: dbShop.created_at,
       settings: dbShop.settings || {},
     };
