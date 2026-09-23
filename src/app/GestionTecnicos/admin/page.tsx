@@ -25,9 +25,10 @@ import {
   X,
   Save,
   Store,
+  Trash2,
 } from 'lucide-react';
 import { Shop } from '@/types';
-import { fetchAllShopsForAdmin, updateShopSubscriptionStatus } from '@/lib/supabase/services';
+import { fetchAllShopsForAdmin, updateShopSubscriptionStatus, deleteShopAsAdmin } from '@/lib/supabase/services';
 import { supabase } from '@/lib/supabase/client';
 
 export default function SuperAdminDashboardPage() {
@@ -44,6 +45,12 @@ export default function SuperAdminDashboardPage() {
   const [newShopName, setNewShopName] = useState('');
   const [newOwnerEmail, setNewOwnerEmail] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
+
+  // Modal para eliminar taller permanentemente
+  const [shopToDelete, setShopToDelete] = useState<Shop | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const loadShops = async () => {
     setLoading(true);
@@ -192,6 +199,23 @@ export default function SuperAdminDashboardPage() {
       console.error('Error:', err);
     } finally {
       setModalLoading(false);
+    }
+  };
+
+  const handleDeleteShop = async () => {
+    if (!shopToDelete) return;
+    setDeleteLoading(true);
+    setDeleteError('');
+    try {
+      await deleteShopAsAdmin(shopToDelete.id);
+      setShops((prev) => prev.filter((s) => s.id !== shopToDelete.id));
+      setShopToDelete(null);
+      setDeleteConfirmText('');
+    } catch (err: any) {
+      console.error('Error al eliminar taller:', err);
+      setDeleteError(err.message || 'Error al eliminar el taller.');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -452,6 +476,18 @@ export default function SuperAdminDashboardPage() {
                             <Copy className="w-4 h-4 text-primary" />
                           )}
                         </button>
+
+                        <button
+                          onClick={() => {
+                            setDeleteError('');
+                            setDeleteConfirmText('');
+                            setShopToDelete(shop);
+                          }}
+                          className="bg-error/15 border border-error/30 hover:bg-error/25 text-error p-1.5 rounded-lg transition-colors inline-flex items-center"
+                          title="Eliminar Taller / Negocio definitivamente"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -527,6 +563,118 @@ export default function SuperAdminDashboardPage() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN DE TALLER (HARD DELETE) */}
+      {shopToDelete && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-surface-container border border-error/40 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
+            {/* Cabecera */}
+            <div className="flex justify-between items-center border-b border-outline-variant/60 pb-3">
+              <h3 className="font-title-sm text-base font-bold text-error flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-error shrink-0" /> Eliminar Taller Permanentemente
+              </h3>
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={() => {
+                  setShopToDelete(null);
+                  setDeleteConfirmText('');
+                }}
+                className="p-1 hover:bg-surface-container-highest rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-on-surface-variant" />
+              </button>
+            </div>
+
+            {/* Error si ocurre */}
+            {deleteError && (
+              <div className="p-3 rounded-xl bg-error/10 border border-error/30 text-error text-xs font-semibold flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>{deleteError}</span>
+              </div>
+            )}
+
+            {/* Detalles del Taller */}
+            <div className="p-3.5 bg-surface-container-lowest border border-outline-variant/70 rounded-xl space-y-1.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant font-medium">Taller / Negocio:</span>
+                <strong className="text-on-surface">{shopToDelete.name}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant font-medium">Email del Dueño:</span>
+                <span className="font-mono text-on-surface">{shopToDelete.owner_email}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant font-medium">Órdenes Generadas:</span>
+                <span className="font-mono text-primary font-bold">{shopToDelete.orders_count || 0} órdenes</span>
+              </div>
+            </div>
+
+            {/* Alerta de Peligro */}
+            <div className="p-3 rounded-xl bg-error/10 border border-error/30 text-error text-xs space-y-1">
+              <div className="font-bold flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 shrink-0" /> ¡Advertencia de Acción Irreversible!
+              </div>
+              <p className="text-[11px] text-error/90 leading-relaxed">
+                Esta acción eliminará <strong>permanentemente</strong> el taller y todos sus datos en cascada: órdenes de servicio, clientes, dispositivos, inventario, trabajos extra y accesos de usuarios asociados en Supabase.
+              </p>
+            </div>
+
+            {/* Confirmación por Texto */}
+            <div className="space-y-1.5 text-xs">
+              <label className="block text-on-surface-variant font-medium">
+                Para confirmar, escribe exactamente <strong className="text-on-surface font-mono">{shopToDelete.name}</strong> o la palabra <strong className="text-error font-mono">ELIMINAR</strong>:
+              </label>
+              <input
+                type="text"
+                disabled={deleteLoading}
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder={`Escribe "${shopToDelete.name}" o "ELIMINAR"`}
+                className="w-full bg-surface-container-lowest border border-error/50 focus:border-error rounded-xl p-2.5 text-xs text-on-surface font-mono focus:outline-none focus:ring-1 focus:ring-error"
+                autoFocus
+              />
+            </div>
+
+            {/* Botones */}
+            <div className="flex justify-end gap-2.5 pt-2 border-t border-outline-variant/40">
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={() => {
+                  setShopToDelete(null);
+                  setDeleteConfirmText('');
+                }}
+                className="px-4 py-2 text-xs font-title-sm text-on-surface-variant hover:bg-surface-container-highest rounded-xl disabled:opacity-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={
+                  deleteLoading ||
+                  (deleteConfirmText.trim().toLowerCase() !== shopToDelete.name.trim().toLowerCase() &&
+                    deleteConfirmText.trim().toUpperCase() !== 'ELIMINAR')
+                }
+                onClick={handleDeleteShop}
+                className="bg-error text-on-error font-title-sm text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-1.5 shadow hover:bg-error/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {deleteLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Eliminando taller...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Eliminar Definitivamente</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

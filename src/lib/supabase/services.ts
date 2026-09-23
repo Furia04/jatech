@@ -260,6 +260,34 @@ export async function updateShopSubscriptionStatus(
   }
 }
 
+export async function deleteShopAsAdmin(shopId: string): Promise<boolean> {
+  try {
+    if (typeof window !== 'undefined') {
+      const res = await fetch(`/api/admin/shops?id=${encodeURIComponent(shopId)}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        return true;
+      }
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Error al eliminar taller');
+    }
+
+    const { error } = await supabase
+      .from('shops')
+      .delete()
+      .eq('id', shopId);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Error en deleteShopAsAdmin:', err);
+    throw err;
+  }
+}
+
+
 // =======================================================
 // DESCUENTO AUTOMÁTICO DE STOCK DE INVENTARIO
 // =======================================================

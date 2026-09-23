@@ -134,3 +134,60 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: err?.message || 'Error al crear taller' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const authCheck = await verifySuperAdminUser();
+    if (!authCheck.authorized) {
+      return NextResponse.json(
+        { error: authCheck.error || 'No autorizado' },
+        { status: authCheck.statusCode || 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    let shopId = searchParams.get('id') || searchParams.get('shopId');
+
+    if (!shopId) {
+      try {
+        const body = await request.json();
+        shopId = body.shopId || body.id;
+      } catch (e) {
+        // body was not json
+      }
+    }
+
+    if (!shopId) {
+      return NextResponse.json({ error: 'ID del taller es requerido' }, { status: 400 });
+    }
+
+    // 1. Limpieza explícita de registros dependientes
+    await Promise.allSettled([
+      supabaseAdmin.from('service_orders').delete().eq('shop_id', shopId),
+      supabaseAdmin.from('customers').delete().eq('shop_id', shopId),
+      supabaseAdmin.from('devices').delete().eq('shop_id', shopId),
+      supabaseAdmin.from('inventory').delete().eq('shop_id', shopId),
+      supabaseAdmin.from('extra_jobs').delete().eq('shop_id', shopId),
+      supabaseAdmin.from('part_orders').delete().eq('shop_id', shopId),
+      supabaseAdmin.from('device_category_templates').delete().eq('shop_id', shopId),
+      supabaseAdmin.from('users').delete().eq('shop_id', shopId),
+    ]);
+
+    // 2. Eliminar de la tabla shops
+    const { error } = await supabaseAdmin
+      .from('shops')
+      .delete()
+      .eq('id', shopId);
+
+    if (error) {
+      console.error('Error al eliminar taller en Supabase Admin API:', error);
+      throw error;
+    }
+
+    return NextResponse.json({ success: true, message: 'Taller eliminado correctamente' });
+  } catch (err: any) {
+    console.error('Error en DELETE /api/admin/shops:', err);
+    return NextResponse.json({ error: err?.message || 'Error al eliminar taller' }, { status: 500 });
+  }
+}
+
