@@ -74,3 +74,18 @@ data class Device(
     val model: String = "",
     @SerialName("serial_number") val serialNumber: String? = null
 )
+
+@Serializable
+data class InventoryItem(
+    val id: String,
+    @SerialName("shop_id") val shopId: String,
+    val name: String,
+    val sku: String? = null,
+    val stock: Int = 0,
+    @SerialName("min_stock") val minStock: Int = 0,
+    @SerialName("cost_price") val costPrice: Double? = null,
+    @SerialName("selling_price") val sellingPrice: Double? = null,
+    val category: String? = null,
+    val location: String? = null,
+    @SerialName("created_at") val createdAt: String? = null
+)

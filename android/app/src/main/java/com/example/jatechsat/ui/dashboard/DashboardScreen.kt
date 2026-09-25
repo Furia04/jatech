@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.example.jatechsat.data.model.UserProfile
 import com.example.jatechsat.data.supabase.SatRepository
 import com.example.jatechsat.theme.*
+import com.example.jatechsat.ui.inventory.InventoryScreen
 import com.example.jatechsat.ui.orders.OrdersScreen
 import com.example.jatechsat.ui.partorders.PartOrdersScreen
 import com.example.jatechsat.ui.scanner.QrScannerScreen
@@ -23,6 +24,7 @@ import kotlinx.coroutines.launch
 
 enum class DashboardTab(val title: String, val icon: ImageVector) {
     ORDERS("Órdenes", Icons.Default.Build),
+    INVENTORY("Inventario", Icons.Default.Inventory2),
     PART_ORDERS("Repuestos", Icons.Default.ShoppingBag),
     SCANNER("Escanear", Icons.Default.QrCodeScanner),
     PROFILE("Mi Taller", Icons.Default.Store)
@@ -124,6 +126,11 @@ fun DashboardScreen(
                 DashboardTab.ORDERS -> OrdersScreen(
                     shopId = user.shopId ?: user.id,
                     shopName = shopName,
+                    canViewMoney = user.canViewFinancials,
+                    repository = repository
+                )
+                DashboardTab.INVENTORY -> InventoryScreen(
+                    shopId = user.shopId ?: user.id,
                     canViewMoney = user.canViewFinancials,
                     repository = repository
                 )

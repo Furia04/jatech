@@ -1,6 +1,7 @@
 package com.example.jatechsat.data.supabase
 
 import com.example.jatechsat.data.model.Customer
+import com.example.jatechsat.data.model.InventoryItem
 import com.example.jatechsat.data.model.PartOrder
 import com.example.jatechsat.data.model.ServiceOrder
 import com.example.jatechsat.data.model.Shop
@@ -356,17 +357,74 @@ class SatRepository {
         }
     }
 
-    // CUSTOMERS
-    suspend fun fetchCustomers(shopId: String): Result<List<Customer>> = withContext(Dispatchers.IO) {
+
+    // INVENTORY
+    suspend fun fetchInventory(shopId: String): Result<List<InventoryItem>> = withContext(Dispatchers.IO) {
         try {
-            val customers = postgrest.from("customers")
+            val items = postgrest.from("inventory")
                 .select {
                     filter {
                         eq("shop_id", shopId)
                     }
+                    order("name", order = Order.ASCENDING)
                 }
-                .decodeList<Customer>()
-            Result.success(customers)
+                .decodeList<InventoryItem>()
+            Result.success(items)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun createInventoryItem(item: InventoryItem): Result<InventoryItem> = withContext(Dispatchers.IO) {
+        try {
+            val created = postgrest.from("inventory")
+                .insert(item) {
+                    select()
+                }
+                .decodeSingle<InventoryItem>()
+            Result.success(created)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateInventoryItem(item: InventoryItem): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            postgrest.from("inventory")
+                .update(item) {
+                    filter {
+                        eq("id", item.id)
+                    }
+                }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateInventoryStock(itemId: String, newStock: Int): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            postgrest.from("inventory")
+                .update(mapOf("stock" to newStock)) {
+                    filter {
+                        eq("id", itemId)
+                    }
+                }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteInventoryItem(itemId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            postgrest.from("inventory")
+                .delete {
+                    filter {
+                        eq("id", itemId)
+                    }
+                }
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
