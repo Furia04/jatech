@@ -82,10 +82,10 @@ data class InventoryItem(
     val name: String,
     val sku: String? = null,
     val stock: Int = 0,
-    @SerialName("min_stock") val minStock: Int = 0,
-    @SerialName("cost_price") val costPrice: Double? = null,
-    @SerialName("selling_price") val sellingPrice: Double? = null,
+    @SerialName("reserved_stock") val reservedStock: Int = 0,
+    @SerialName("min_stock") val minStock: Int = 2,
+    val cost: Double? = 0.0,
+    val price: Double? = 0.0,
     val category: String? = null,
-    val location: String? = null,
     @SerialName("created_at") val createdAt: String? = null
 )

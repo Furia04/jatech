@@ -60,15 +60,14 @@ fun InventoryScreen(
         val q = searchQuery.lowercase()
         val matchesQuery = item.name.lowercase().contains(q) ||
                 (item.sku?.lowercase()?.contains(q) == true) ||
-                (item.category?.lowercase()?.contains(q) == true) ||
-                (item.location?.lowercase()?.contains(q) == true)
+                (item.category?.lowercase()?.contains(q) == true)
         val matchesLowStock = !filterLowStockOnly || (item.stock <= item.minStock)
         matchesQuery && matchesLowStock
     }
 
     val totalItemsCount = items.size
-    val lowStockCount = items.count { it.stock <= it.minStock }
-    val totalInventoryValue = items.sumOf { (it.sellingPrice ?: 0.0) * it.stock }
+    val lowStockCount = items.count { item -> item.stock <= item.minStock }
+    val totalInventoryValue = items.sumOf { (it.price ?: 0.0) * it.stock }
 
     Scaffold(
         floatingActionButton = {
@@ -317,9 +316,6 @@ fun InventoryItemCard(
                         if (!item.sku.isNullOrBlank()) {
                             Text("• SKU: ${item.sku}", fontSize = 11.sp, color = TextSecondary)
                         }
-                        if (!item.location.isNullOrBlank()) {
-                            Text("• 📍 ${item.location}", fontSize = 11.sp, color = TextSecondary)
-                        }
                     }
                 }
 
@@ -416,7 +412,7 @@ fun InventoryItemCard(
 
                 // Precios
                 Column(horizontalAlignment = Alignment.End) {
-                    item.sellingPrice?.let { price ->
+                    item.price?.let { price ->
                         Text(
                             text = "$${String.format("%,.0f", price)}",
                             fontSize = 15.sp,
@@ -424,9 +420,9 @@ fun InventoryItemCard(
                             color = AccentEmerald
                         )
                     }
-                    if (canViewMoney && item.costPrice != null) {
+                    if (canViewMoney && item.cost != null && item.cost > 0) {
                         Text(
-                            text = "Costo: $${String.format("%,.0f", item.costPrice)}",
+                            text = "Costo: $${String.format("%,.0f", item.cost)}",
                             fontSize = 10.sp,
                             color = TextSecondary
                         )
@@ -449,11 +445,10 @@ fun InventoryItemDialog(
     var name by remember { mutableStateOf(item?.name ?: "") }
     var sku by remember { mutableStateOf(item?.sku ?: "") }
     var category by remember { mutableStateOf(item?.category ?: "") }
-    var location by remember { mutableStateOf(item?.location ?: "") }
     var stock by remember { mutableStateOf(item?.stock?.toString() ?: "1") }
     var minStock by remember { mutableStateOf(item?.minStock?.toString() ?: "2") }
-    var costPrice by remember { mutableStateOf(item?.costPrice?.toString() ?: "") }
-    var sellingPrice by remember { mutableStateOf(item?.sellingPrice?.toString() ?: "") }
+    var cost by remember { mutableStateOf(item?.cost?.takeIf { it > 0 }?.toString() ?: "") }
+    var price by remember { mutableStateOf(item?.price?.takeIf { it > 0 }?.toString() ?: "") }
 
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -525,29 +520,21 @@ fun InventoryItemDialog(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (canViewMoney) {
                         OutlinedTextField(
-                            value = costPrice,
-                            onValueChange = { costPrice = it },
+                            value = cost,
+                            onValueChange = { cost = it },
                             label = { Text("Costo ($)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f)
                         )
                     }
                     OutlinedTextField(
-                        value = sellingPrice,
-                        onValueChange = { sellingPrice = it },
+                        value = price,
+                        onValueChange = { price = it },
                         label = { Text("Precio Venta ($)") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f)
                     )
                 }
-
-                OutlinedTextField(
-                    value = location,
-                    onValueChange = { location = it },
-                    label = { Text("Ubicación Física (ej: Estante A, Cajón 3)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
             }
         },
         confirmButton = {
@@ -564,11 +551,10 @@ fun InventoryItemDialog(
                         name = name.trim(),
                         sku = sku.trim().ifBlank { null },
                         category = category.trim().ifBlank { null },
-                        location = location.trim().ifBlank { null },
                         stock = stock.toIntOrNull() ?: 0,
                         minStock = minStock.toIntOrNull() ?: 2,
-                        costPrice = costPrice.toDoubleOrNull(),
-                        sellingPrice = sellingPrice.toDoubleOrNull()
+                        cost = cost.toDoubleOrNull() ?: 0.0,
+                        price = price.toDoubleOrNull() ?: 0.0
                     )
 
                     coroutineScope.launch {

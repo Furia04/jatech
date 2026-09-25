@@ -11,6 +11,8 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 class SatRepository {
     private val client = SupabaseClientProvider.client
@@ -35,7 +37,25 @@ class SatRepository {
             )
             Result.success(profile)
         } catch (e: Exception) {
-            Result.failure(e)
+            val rawMsg = e.message ?: ""
+            val userFriendlyMessage = when {
+                rawMsg.contains("invalid_credentials", ignoreCase = true) ||
+                rawMsg.contains("invalid login", ignoreCase = true) ||
+                rawMsg.contains("invalid grant", ignoreCase = true) ||
+                rawMsg.contains("email not confirmed", ignoreCase = true) ||
+                rawMsg.contains("User not found", ignoreCase = true) ||
+                rawMsg.contains("400", ignoreCase = true) ||
+                rawMsg.contains("401", ignoreCase = true) -> {
+                    "Credenciales inválidas. Por favor revisá tu correo y contraseña."
+                }
+                rawMsg.contains("unable to resolve host", ignoreCase = true) ||
+                rawMsg.contains("connect", ignoreCase = true) ||
+                rawMsg.contains("timeout", ignoreCase = true) -> {
+                    "No se pudo conectar al servidor. Verificá tu conexión a internet."
+                }
+                else -> rawMsg.ifBlank { "Credenciales inválidas o error de autenticación." }
+            }
+            Result.failure(Exception(userFriendlyMessage, e))
         }
     }
 
@@ -230,50 +250,58 @@ class SatRepository {
         try {
             val custId = if (!existingCustomerId.isNullOrBlank()) existingCustomerId else java.util.UUID.randomUUID().toString()
             if (existingCustomerId.isNullOrBlank()) {
-                postgrest.from("customers").insert(
-                    mapOf(
-                        "id" to custId,
-                        "shop_id" to order.shopId,
-                        "full_name" to (order.customerName ?: "Cliente"),
-                        "phone" to (order.customerPhone ?: "")
-                    )
-                )
+                val custPayload = buildJsonObject {
+                    put("id", custId)
+                    put("shop_id", order.shopId)
+                    put("full_name", order.customerName ?: "Cliente")
+                    put("phone", order.customerPhone ?: "")
+                }
+                postgrest.from("customers").insert(custPayload)
             }
 
             val devId = if (!existingDeviceId.isNullOrBlank()) existingDeviceId else java.util.UUID.randomUUID().toString()
             if (existingDeviceId.isNullOrBlank()) {
-                postgrest.from("devices").insert(
-                    mapOf(
-                        "id" to devId,
-                        "shop_id" to order.shopId,
-                        "customer_id" to custId,
-                        "type" to "Equipo",
-                        "brand" to (order.deviceInfo ?: "Equipo"),
-                        "model" to ""
-                    )
-                )
+                val devPayload = buildJsonObject {
+                    put("id", devId)
+                    put("shop_id", order.shopId)
+                    put("customer_id", custId)
+                    put("type", "Equipo")
+                    put("brand", order.deviceInfo ?: "Equipo")
+                    put("model", "")
+                }
+                postgrest.from("devices").insert(devPayload)
             }
 
             val orderId = if (order.id.isNotBlank()) order.id else java.util.UUID.randomUUID().toString()
-            val orderMap = mutableMapOf<String, Any>(
-                "id" to orderId,
-                "shop_id" to order.shopId,
-                "tracking_code" to order.trackingCode,
-                "device_id" to devId,
-                "customer_id" to custId,
-                "status" to order.status,
-                "reported_fault" to order.reportedFault,
-                "estimated_cost" to (order.estimatedCost ?: 0.0),
-                "final_price" to (order.finalPrice ?: (order.estimatedCost ?: 0.0)),
-                "advance_payment" to (order.advancePayment ?: 0.0)
-            )
+            val orderJson = buildJsonObject {
+                put("id", orderId)
+                put("shop_id", order.shopId)
+                put("tracking_code", order.trackingCode)
+                put("device_id", devId)
+                put("customer_id", custId)
+                put("status", order.status)
+                put("reported_fault", order.reportedFault)
+                put("estimated_cost", order.estimatedCost ?: 0.0)
+                put("final_price", order.finalPrice ?: (order.estimatedCost ?: 0.0))
+                put("advance_payment", order.advancePayment ?: 0.0)
+            }
 
             try {
-                postgrest.from("service_orders").insert(orderMap)
+                postgrest.from("service_orders").insert(orderJson)
             } catch (ordEx: Exception) {
                 if (ordEx.message?.contains("order_status", ignoreCase = true) == true || ordEx.message?.contains("enum", ignoreCase = true) == true) {
-                    orderMap.remove("status")
-                    postgrest.from("service_orders").insert(orderMap)
+                    val fallbackJson = buildJsonObject {
+                        put("id", orderId)
+                        put("shop_id", order.shopId)
+                        put("tracking_code", order.trackingCode)
+                        put("device_id", devId)
+                        put("customer_id", custId)
+                        put("reported_fault", order.reportedFault)
+                        put("estimated_cost", order.estimatedCost ?: 0.0)
+                        put("final_price", order.finalPrice ?: (order.estimatedCost ?: 0.0))
+                        put("advance_payment", order.advancePayment ?: 0.0)
+                    }
+                    postgrest.from("service_orders").insert(fallbackJson)
                 } else {
                     throw ordEx
                 }
@@ -287,8 +315,11 @@ class SatRepository {
 
     suspend fun updateOrderStatus(orderId: String, newStatus: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            val updatePayload = buildJsonObject {
+                put("status", newStatus)
+            }
             postgrest.from("service_orders")
-                .update(mapOf("status" to newStatus)) {
+                .update(updatePayload) {
                     filter {
                         eq("id", orderId)
                     }
@@ -331,8 +362,11 @@ class SatRepository {
 
     suspend fun updatePartOrderStatus(orderId: String, newStatus: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            val payload = buildJsonObject {
+                put("status", newStatus)
+            }
             postgrest.from("part_orders")
-                .update(mapOf("status" to newStatus)) {
+                .update(payload) {
                     filter {
                         eq("id", orderId)
                     }
@@ -404,8 +438,11 @@ class SatRepository {
 
     suspend fun updateInventoryStock(itemId: String, newStock: Int): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            val payload = buildJsonObject {
+                put("stock", newStock)
+            }
             postgrest.from("inventory")
-                .update(mapOf("stock" to newStock)) {
+                .update(payload) {
                     filter {
                         eq("id", itemId)
                     }
