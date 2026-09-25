@@ -1063,27 +1063,50 @@ export async function createInventoryItem(itemData: {
   min_stock: number;
   cost?: number;
   price: number;
+  condition?: 'nuevo' | 'usado';
+  condition_grade?: string;
+  source_notes?: string;
 }): Promise<InventoryItem> {
   const profile = await getCurrentUserProfile();
   const shopId = profile?.shop_id || profile?.id;
   if (!shopId) throw new Error('Debe iniciar sesión para agregar repuestos.');
 
+  const basePayload: any = {
+    shop_id: shopId,
+    sku: itemData.sku.trim(),
+    name: itemData.name.trim(),
+    category: itemData.category.trim(),
+    stock: Math.max(0, itemData.stock),
+    min_stock: Math.max(0, itemData.min_stock),
+    cost: itemData.cost || 0,
+    price: itemData.price || 0,
+    condition: itemData.condition || 'nuevo',
+    condition_grade: itemData.condition_grade || null,
+    source_notes: itemData.source_notes || null,
+  };
+
   const { data, error } = await supabase
     .from('inventory')
-    .insert([{
-      shop_id: shopId,
-      sku: itemData.sku.trim(),
-      name: itemData.name.trim(),
-      category: itemData.category.trim(),
-      stock: Math.max(0, itemData.stock),
-      min_stock: Math.max(0, itemData.min_stock),
-      cost: itemData.cost || 0,
-      price: itemData.price || 0,
-    }])
+    .insert([basePayload])
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    if (error.message?.includes('condition') || error.code === '42703') {
+      console.warn('Columnas de condición no presentes en base de datos, reintentando inserción básica:', error.message);
+      delete basePayload.condition;
+      delete basePayload.condition_grade;
+      delete basePayload.source_notes;
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('inventory')
+        .insert([basePayload])
+        .select()
+        .single();
+      if (fallbackError) throw fallbackError;
+      return { ...fallbackData, condition: itemData.condition || 'nuevo' };
+    }
+    throw error;
+  }
   return data;
 }
 
@@ -1097,6 +1120,9 @@ export async function updateInventoryItem(
     min_stock?: number;
     cost?: number;
     price?: number;
+    condition?: 'nuevo' | 'usado';
+    condition_grade?: string;
+    source_notes?: string;
   }
 ): Promise<InventoryItem> {
   const profile = await getCurrentUserProfile();
@@ -1111,6 +1137,9 @@ export async function updateInventoryItem(
   if (itemData.min_stock !== undefined) updatePayload.min_stock = Math.max(0, itemData.min_stock);
   if (itemData.cost !== undefined) updatePayload.cost = itemData.cost;
   if (itemData.price !== undefined) updatePayload.price = itemData.price;
+  if (itemData.condition !== undefined) updatePayload.condition = itemData.condition;
+  if (itemData.condition_grade !== undefined) updatePayload.condition_grade = itemData.condition_grade;
+  if (itemData.source_notes !== undefined) updatePayload.source_notes = itemData.source_notes;
 
   let query = supabase.from('inventory').update(updatePayload).eq('id', itemId);
   if (shopId && profile?.role !== 'superadmin') {
@@ -1118,7 +1147,21 @@ export async function updateInventoryItem(
   }
 
   const { data, error } = await query.select().single();
-  if (error) throw error;
+  if (error) {
+    if (error.message?.includes('condition') || error.code === '42703') {
+      delete updatePayload.condition;
+      delete updatePayload.condition_grade;
+      delete updatePayload.source_notes;
+      let retryQuery = supabase.from('inventory').update(updatePayload).eq('id', itemId);
+      if (shopId && profile?.role !== 'superadmin') {
+        retryQuery = retryQuery.eq('shop_id', shopId);
+      }
+      const { data: retryData, error: retryError } = await retryQuery.select().single();
+      if (retryError) throw retryError;
+      return { ...retryData, condition: itemData.condition || 'nuevo' };
+    }
+    throw error;
+  }
   return data;
 }
 

@@ -159,6 +159,9 @@ export interface InventoryItem {
   min_stock: number;
   cost?: number;
   price: number;
+  condition?: 'nuevo' | 'usado';
+  condition_grade?: string;
+  source_notes?: string;
   created_at: string;
 }
 
