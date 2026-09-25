@@ -21,16 +21,21 @@ import {
   MinusCircle,
   PlusCircle,
   Trash2,
+  Tag,
+  FolderPlus,
 } from 'lucide-react';
 import { InventoryItem, UserProfile } from '@/types';
 import { hasFinancialAccess } from '@/lib/permissions';
 import {
   fetchInventory,
   createInventoryItem,
+  updateInventoryItem,
   updateInventoryStock,
   deleteInventoryItem,
   getCurrentUserProfile,
 } from '@/lib/supabase/services';
+
+const DEFAULT_CATEGORIES = ['Pantallas', 'Baterías', 'Puertos', 'Accesorios', 'Placas / IC', 'Cámaras', 'Flex / Botones'];
 
 export default function InventoryPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -39,11 +44,18 @@ export default function InventoryPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  // Categorías personalizadas (guardadas localmente)
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [newCategoryInput, setNewCategoryInput] = useState('');
+  const [categoryModalError, setCategoryModalError] = useState('');
+
   // Estado para Modal de Alta de Repuesto
   const [showAddModal, setShowAddModal] = useState(false);
   const [sku, setSku] = useState('');
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Pantallas');
+  const [customCategory, setCustomCategory] = useState('');
   const [stock, setStock] = useState<number>(5);
   const [minStock, setMinStock] = useState<number>(2);
   const [cost, setCost] = useState<number>(0);
@@ -52,6 +64,19 @@ export default function InventoryPage() {
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState('');
   const [stockUpdatingId, setStockUpdatingId] = useState<string | null>(null);
+
+  // Estado para Modal de Edición de Repuesto
+  const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
+  const [editSku, setEditSku] = useState('');
+  const [editName, setEditName] = useState('');
+  const [editCategory, setEditCategory] = useState('Pantallas');
+  const [editCustomCategory, setEditCustomCategory] = useState('');
+  const [editStock, setEditStock] = useState<number>(0);
+  const [editMinStock, setEditMinStock] = useState<number>(2);
+  const [editCost, setEditCost] = useState<number>(0);
+  const [editPrice, setEditPrice] = useState<number>(0);
+  const [editModalLoading, setEditModalLoading] = useState(false);
+  const [editModalError, setEditModalError] = useState('');
 
   // Estado para Modal de Eliminación de Repuesto
   const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
@@ -76,7 +101,29 @@ export default function InventoryPage() {
 
   useEffect(() => {
     loadData();
+    try {
+      const saved = localStorage.getItem('jatech_inventory_categories');
+      if (saved) {
+        setCustomCategories(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.warn('Error al cargar categorías personalizadas:', e);
+    }
   }, []);
+
+  const saveNewCategory = (cat: string) => {
+    const clean = cat.trim();
+    if (!clean) return;
+    if (!allCategories.includes(clean)) {
+      const updated = Array.from(new Set([...customCategories, clean]));
+      setCustomCategories(updated);
+      try {
+        localStorage.setItem('jatech_inventory_categories', JSON.stringify(updated));
+      } catch (e) {
+        console.warn('Error guardando categoría:', e);
+      }
+    }
+  };
 
   const canSeeMoney = userProfile ? hasFinancialAccess(userProfile) : true;
 
@@ -90,7 +137,13 @@ export default function InventoryPage() {
     0
   );
 
-  const categories = Array.from(new Set(['Pantallas', 'Baterías', 'Puertos', 'Accesorios', ...inventory.map((i) => i.category)]));
+  const allCategories = Array.from(
+    new Set([
+      ...DEFAULT_CATEGORIES,
+      ...customCategories,
+      ...inventory.map((i) => i.category).filter(Boolean),
+    ])
+  );
 
   const filteredItems = inventory.filter((i) => {
     const matchesCat = categoryFilter === 'all' ? true : i.category === categoryFilter;
@@ -101,10 +154,30 @@ export default function InventoryPage() {
     return matchesCat && matchesSearch;
   });
 
+  const handleCreateCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategoryInput.trim()) {
+      setCategoryModalError('Ingresa un nombre para la categoría.');
+      return;
+    }
+    const cleanCat = newCategoryInput.trim();
+    saveNewCategory(cleanCat);
+    setNewCategoryInput('');
+    setCategoryModalError('');
+    setShowCategoryModal(false);
+    setCategoryFilter(cleanCat);
+  };
+
   const handleCreateItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !sku.trim()) {
       setModalError('SKU y Nombre del repuesto son obligatorios.');
+      return;
+    }
+
+    const finalCategory = category === '__NEW__' ? customCategory.trim() : category.trim();
+    if (!finalCategory) {
+      setModalError('Por favor selecciona o escribe una categoría válida.');
       return;
     }
 
@@ -115,17 +188,22 @@ export default function InventoryPage() {
       const newItem = await createInventoryItem({
         sku: sku.trim(),
         name: name.trim(),
-        category: category.trim(),
+        category: finalCategory,
         stock: Number(stock) || 0,
         min_stock: Number(minStock) || 0,
         cost: Number(cost) || 0,
         price: Number(price) || 0,
       });
 
+      if (category === '__NEW__') {
+        saveNewCategory(finalCategory);
+      }
+
       setInventory((prev) => [...prev, newItem]);
       setSku('');
       setName('');
       setCategory('Pantallas');
+      setCustomCategory('');
       setStock(5);
       setMinStock(2);
       setCost(0);
@@ -135,6 +213,61 @@ export default function InventoryPage() {
       setModalError(err.message || 'Error al guardar repuesto en Supabase');
     } finally {
       setModalLoading(false);
+    }
+  };
+
+  const handleOpenEdit = (item: InventoryItem) => {
+    setItemToEdit(item);
+    setEditSku(item.sku);
+    setEditName(item.name);
+    setEditCategory(item.category);
+    setEditCustomCategory('');
+    setEditStock(item.stock);
+    setEditMinStock(item.min_stock);
+    setEditCost(item.cost || 0);
+    setEditPrice(item.price || 0);
+    setEditModalError('');
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!itemToEdit) return;
+
+    if (!editName.trim() || !editSku.trim()) {
+      setEditModalError('SKU y Nombre del repuesto son obligatorios.');
+      return;
+    }
+
+    const finalCategory = editCategory === '__NEW__' ? editCustomCategory.trim() : editCategory.trim();
+    if (!finalCategory) {
+      setEditModalError('Por favor selecciona o escribe una categoría.');
+      return;
+    }
+
+    setEditModalLoading(true);
+    setEditModalError('');
+
+    try {
+      const updatedItem = await updateInventoryItem(itemToEdit.id, {
+        sku: editSku.trim(),
+        name: editName.trim(),
+        category: finalCategory,
+        stock: Number(editStock) || 0,
+        min_stock: Number(editMinStock) || 0,
+        cost: Number(editCost) || 0,
+        price: Number(editPrice) || 0,
+      });
+
+      if (editCategory === '__NEW__') {
+        saveNewCategory(finalCategory);
+      }
+
+      setInventory((prev) => prev.map((i) => (i.id === itemToEdit.id ? updatedItem : i)));
+      setItemToEdit(null);
+    } catch (err: any) {
+      setEditModalError(err.message || 'Error al actualizar repuesto en Supabase');
+    } finally {
+      setEditModalLoading(false);
     }
   };
 
@@ -170,6 +303,21 @@ export default function InventoryPage() {
     }
   };
 
+  const renderCategoryIcon = (catName: string) => {
+    switch (catName) {
+      case 'Pantallas':
+        return <Smartphone className="w-3.5 h-3.5 text-primary" />;
+      case 'Baterías':
+        return <Battery className="w-3.5 h-3.5 text-emerald-400" />;
+      case 'Puertos':
+        return <Usb className="w-3.5 h-3.5 text-amber-400" />;
+      case 'Accesorios':
+        return <Shield className="w-3.5 h-3.5 text-purple-400" />;
+      default:
+        return <Tag className="w-3.5 h-3.5 text-cyan-400" />;
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 font-sans max-w-7xl mx-auto pb-12">
       {/* Encabezado */}
@@ -179,16 +327,26 @@ export default function InventoryPage() {
             <Package className="w-7 h-7 text-primary" /> Gestión de Inventario
           </h2>
           <p className="font-body-md text-xs sm:text-sm text-on-surface-variant mt-1">
-            Control de repuestos, alertas de stock mínimo y rentabilidad real de tu taller.
+            Control de repuestos, categorías personalizadas, alertas de stock mínimo y rentabilidad.
           </p>
         </div>
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-primary text-on-primary font-title-sm text-xs font-bold px-5 py-2.5 rounded-xl hover:bg-primary-container transition-all flex items-center gap-2 shadow-md"
-        >
-          <Plus className="w-4 h-4" /> Agregar Repuesto
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => setShowCategoryModal(true)}
+            className="bg-surface-container-high border border-outline-variant text-on-surface hover:bg-surface-container-highest font-title-sm text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-sm cursor-pointer"
+            title="Crear nueva categoría de repuestos"
+          >
+            <FolderPlus className="w-4 h-4 text-primary" /> + Nueva Categoría
+          </button>
+
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-primary text-on-primary font-title-sm text-xs font-bold px-5 py-2.5 rounded-xl hover:bg-primary-container transition-all flex items-center gap-2 shadow-md cursor-pointer"
+          >
+            <Plus className="w-4 h-4" /> Agregar Repuesto
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -309,30 +467,33 @@ export default function InventoryPage() {
                 />
               </div>
 
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
                 <button
                   onClick={() => setCategoryFilter('all')}
-                  className={`px-3 py-1.5 rounded-xl font-title-sm text-xs font-bold transition-all ${
+                  className={`px-3 py-1.5 rounded-xl font-title-sm text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                     categoryFilter === 'all'
                       ? 'bg-primary text-on-primary shadow-sm'
                       : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-highest'
                   }`}
                 >
-                  Todas
+                  Todas ({inventory.length})
                 </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setCategoryFilter(cat)}
-                    className={`px-3 py-1.5 rounded-xl font-title-sm text-xs font-bold transition-all ${
-                      categoryFilter === cat
-                        ? 'bg-primary text-on-primary shadow-sm'
-                        : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-highest'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
+                {allCategories.map((cat) => {
+                  const count = inventory.filter((i) => i.category === cat).length;
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setCategoryFilter(cat)}
+                      className={`px-3 py-1.5 rounded-xl font-title-sm text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                        categoryFilter === cat
+                          ? 'bg-primary text-on-primary shadow-sm'
+                          : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-highest'
+                      }`}
+                    >
+                      {cat} {count > 0 && <span className="opacity-70 text-[10px]">({count})</span>}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -347,7 +508,7 @@ export default function InventoryPage() {
                 {!searchQuery && (
                   <button
                     onClick={() => setShowAddModal(true)}
-                    className="inline-flex items-center gap-2 bg-primary text-on-primary hover:bg-primary-container px-4 py-2 rounded-xl text-xs font-bold shadow transition-all mt-2"
+                    className="inline-flex items-center gap-2 bg-primary text-on-primary hover:bg-primary-container px-4 py-2 rounded-xl text-xs font-bold shadow transition-all mt-2 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" /> Registrar Primer Repuesto
                   </button>
@@ -389,10 +550,7 @@ export default function InventoryPage() {
                           </td>
                           <td className="p-4 font-sans">
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-bright border border-outline-variant/40 font-title-sm text-[11px] font-bold text-on-surface-variant">
-                              {item.category === 'Pantallas' && <Smartphone className="w-3.5 h-3.5 text-primary" />}
-                              {item.category === 'Baterías' && <Battery className="w-3.5 h-3.5 text-emerald-400" />}
-                              {item.category === 'Puertos' && <Usb className="w-3.5 h-3.5 text-amber-400" />}
-                              {item.category === 'Accesorios' && <Shield className="w-3.5 h-3.5 text-purple-400" />}
+                              {renderCategoryIcon(item.category)}
                               {item.category}
                             </span>
                           </td>
@@ -401,7 +559,7 @@ export default function InventoryPage() {
                               <button
                                 disabled={isUpdating || item.stock <= 0}
                                 onClick={() => handleAdjustStock(item, -1)}
-                                className="p-1 text-on-surface-variant hover:text-error hover:bg-surface-container-highest rounded-lg transition-colors disabled:opacity-30"
+                                className="p-1 text-on-surface-variant hover:text-error hover:bg-surface-container-highest rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
                                 title="Descontar 1 unidad"
                               >
                                 <MinusCircle className="w-4 h-4" />
@@ -418,7 +576,7 @@ export default function InventoryPage() {
                               <button
                                 disabled={isUpdating}
                                 onClick={() => handleAdjustStock(item, 1)}
-                                className="p-1 text-on-surface-variant hover:text-emerald-400 hover:bg-surface-container-highest rounded-lg transition-colors disabled:opacity-30"
+                                className="p-1 text-on-surface-variant hover:text-emerald-400 hover:bg-surface-container-highest rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
                                 title="Agregar 1 unidad"
                               >
                                 <PlusCircle className="w-4 h-4" />
@@ -447,16 +605,28 @@ export default function InventoryPage() {
                             ${item.price.toLocaleString('es-AR')}
                           </td>
                           <td className="p-4 text-center">
-                            <button
-                              onClick={() => {
-                                setDeleteError('');
-                                setItemToDelete(item);
-                              }}
-                              className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors"
-                              title="Eliminar repuesto del inventario"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center justify-center gap-1.5">
+                              {/* Botón Editar Repuesto */}
+                              <button
+                                onClick={() => handleOpenEdit(item)}
+                                className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
+                                title="Editar repuesto"
+                              >
+                                <Edit className="w-4 h-4 text-primary" />
+                              </button>
+
+                              {/* Botón Eliminar Repuesto */}
+                              <button
+                                onClick={() => {
+                                  setDeleteError('');
+                                  setItemToDelete(item);
+                                }}
+                                className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors cursor-pointer"
+                                title="Eliminar repuesto del inventario"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -469,16 +639,76 @@ export default function InventoryPage() {
         </>
       )}
 
-      {/* MODAL DE ALTA DE REPUESTO EN SUPABASE */}
-      {showAddModal && (
+      {/* MODAL DE AÑADIR NUEVA CATEGORÍA */}
+      {showCategoryModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form
+            onSubmit={handleCreateCategory}
+            className="bg-surface-container border border-outline-variant rounded-2xl w-full max-w-sm p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150"
+          >
+            <div className="flex justify-between items-center border-b border-outline-variant/60 pb-3">
+              <h3 className="font-title-sm text-base font-bold text-primary flex items-center gap-2">
+                <FolderPlus className="w-5 h-5 text-primary" /> Añadir Categoría
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowCategoryModal(false)}
+                className="p-1 hover:bg-surface-container-highest rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-on-surface-variant" />
+              </button>
+            </div>
+
+            {categoryModalError && (
+              <div className="bg-error/10 border border-error/30 text-error p-3 rounded-lg text-xs font-semibold">
+                {categoryModalError}
+              </div>
+            )}
+
+            <div>
+              <label className="block font-bold text-on-surface-variant uppercase text-xs mb-1">
+                Nombre de la Categoría *
+              </label>
+              <input
+                type="text"
+                required
+                autoFocus
+                value={newCategoryInput}
+                onChange={(e) => setNewCategoryInput(e.target.value)}
+                placeholder="Ej: Cámaras, Carcasas, Placas Madre..."
+                className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-xs text-on-surface font-semibold focus:outline-none focus:border-primary"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-outline-variant/40">
+              <button
+                type="button"
+                onClick={() => setShowCategoryModal(false)}
+                className="px-4 py-2 text-xs font-title-sm text-on-surface-variant hover:bg-surface-container-highest rounded-xl cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="bg-primary text-on-primary font-title-sm text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-1.5 shadow hover:bg-primary-container cursor-pointer"
+              >
+                <Save className="w-4 h-4" /> Guardar Categoría
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* MODAL DE ALTA DE REPUESTO */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <form
             onSubmit={handleCreateItem}
             className="bg-surface-container border border-outline-variant rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-150"
           >
             <div className="flex justify-between items-center border-b border-outline-variant/60 pb-3">
               <h3 className="font-title-sm text-base font-bold text-primary flex items-center gap-2">
-                <Plus className="w-5 h-5" /> Agregar Repuesto a Supabase
+                <Plus className="w-5 h-5" /> Agregar Repuesto
               </h3>
               <button
                 type="button"
@@ -520,14 +750,29 @@ export default function InventoryPage() {
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-2.5 text-xs text-on-surface font-bold"
                   >
-                    <option value="Pantallas">Pantallas</option>
-                    <option value="Baterías">Baterías</option>
-                    <option value="Puertos">Puertos de Carga</option>
-                    <option value="Accesorios">Accesorios</option>
-                    <option value="Placas / IC">Placas / Microintegrados</option>
+                    {allCategories.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                    <option value="__NEW__">➕ Otra Categoría (Crear nueva)</option>
                   </select>
                 </div>
               </div>
+
+              {category === '__NEW__' && (
+                <div>
+                  <label className="block font-bold text-primary uppercase mb-1">
+                    Nueva Categoría *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={customCategory}
+                    onChange={(e) => setCustomCategory(e.target.value)}
+                    placeholder="Escribe el nombre de la nueva categoría"
+                    className="w-full bg-surface-container-lowest border border-primary rounded-xl p-2.5 text-xs text-on-surface font-bold"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block font-bold text-on-surface-variant uppercase mb-1">
@@ -610,17 +855,190 @@ export default function InventoryPage() {
                 type="button"
                 disabled={modalLoading}
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 text-xs font-title-sm text-on-surface-variant hover:bg-surface-container-highest rounded-xl disabled:opacity-50"
+                className="px-4 py-2 text-xs font-title-sm text-on-surface-variant hover:bg-surface-container-highest rounded-xl disabled:opacity-50 cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={modalLoading}
-                className="bg-primary text-on-primary font-title-sm text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-1.5 shadow disabled:opacity-50"
+                className="bg-primary text-on-primary font-title-sm text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-1.5 shadow disabled:opacity-50 cursor-pointer"
               >
                 {modalLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {modalLoading ? 'Guardando...' : 'Guardar Repuesto'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* MODAL DE EDICIÓN DE REPUESTO */}
+      {itemToEdit && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <form
+            onSubmit={handleSaveEdit}
+            className="bg-surface-container border border-outline-variant rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-150"
+          >
+            <div className="flex justify-between items-center border-b border-outline-variant/60 pb-3">
+              <h3 className="font-title-sm text-base font-bold text-primary flex items-center gap-2">
+                <Edit className="w-5 h-5" /> Editar Repuesto
+              </h3>
+              <button
+                type="button"
+                onClick={() => setItemToEdit(null)}
+                className="p-1 hover:bg-surface-container-highest rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-on-surface-variant" />
+              </button>
+            </div>
+
+            {editModalError && (
+              <div className="bg-error/10 border border-error/30 text-error p-3 rounded-lg text-xs font-semibold">
+                {editModalError}
+              </div>
+            )}
+
+            <div className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-on-surface-variant uppercase mb-1">
+                    Código SKU *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editSku}
+                    onChange={(e) => setEditSku(e.target.value)}
+                    placeholder="Ej: SCR-IP13-01"
+                    className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-2.5 text-xs text-on-surface font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-on-surface-variant uppercase mb-1">
+                    Categoría *
+                  </label>
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-2.5 text-xs text-on-surface font-bold"
+                  >
+                    {allCategories.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                    <option value="__NEW__">➕ Otra Categoría (Crear nueva)</option>
+                  </select>
+                </div>
+              </div>
+
+              {editCategory === '__NEW__' && (
+                <div>
+                  <label className="block font-bold text-primary uppercase mb-1">
+                    Nueva Categoría *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editCustomCategory}
+                    onChange={(e) => setEditCustomCategory(e.target.value)}
+                    placeholder="Escribe el nombre de la nueva categoría"
+                    className="w-full bg-surface-container-lowest border border-primary rounded-xl p-2.5 text-xs text-on-surface font-bold"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block font-bold text-on-surface-variant uppercase mb-1">
+                  Nombre del Repuesto / Insumo *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Ej: Módulo Display OLED iPhone 13 Pro"
+                  className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-xs text-on-surface"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-on-surface-variant uppercase mb-1">
+                    Stock Actual *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={editStock}
+                    onChange={(e) => setEditStock(Number(e.target.value))}
+                    className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-2.5 text-xs text-on-surface font-mono font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-on-surface-variant uppercase mb-1">
+                    Stock Mínimo (Alerta) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={editMinStock}
+                    onChange={(e) => setEditMinStock(Number(e.target.value))}
+                    className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-2.5 text-xs text-on-surface font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-on-surface-variant uppercase mb-1">
+                    Costo Compra ($ ARS)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editCost}
+                    onChange={(e) => setEditCost(Number(e.target.value))}
+                    placeholder="Ej: 15000"
+                    className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-2.5 text-xs text-on-surface font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-on-surface-variant uppercase mb-1">
+                    Precio Venta ($ ARS) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(Number(e.target.value))}
+                    placeholder="Ej: 35000"
+                    className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-2.5 text-xs text-on-surface font-mono font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={editModalLoading}
+                onClick={() => setItemToEdit(null)}
+                className="px-4 py-2 text-xs font-title-sm text-on-surface-variant hover:bg-surface-container-highest rounded-xl disabled:opacity-50 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={editModalLoading}
+                className="bg-primary text-on-primary font-title-sm text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-1.5 shadow disabled:opacity-50 cursor-pointer"
+              >
+                {editModalLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {editModalLoading ? 'Actualizando...' : 'Actualizar Repuesto'}
               </button>
             </div>
           </form>
@@ -639,7 +1057,7 @@ export default function InventoryPage() {
                 type="button"
                 disabled={deleting}
                 onClick={() => setItemToDelete(null)}
-                className="p-1 hover:bg-surface-container-highest rounded-lg transition-colors"
+                className="p-1 hover:bg-surface-container-highest rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5 text-on-surface-variant" />
               </button>
@@ -673,7 +1091,7 @@ export default function InventoryPage() {
                 type="button"
                 disabled={deleting}
                 onClick={() => setItemToDelete(null)}
-                className="px-4 py-2 text-xs font-title-sm text-on-surface-variant hover:bg-surface-container-highest rounded-xl disabled:opacity-50"
+                className="px-4 py-2 text-xs font-title-sm text-on-surface-variant hover:bg-surface-container-highest rounded-xl disabled:opacity-50 cursor-pointer"
               >
                 Cancelar
               </button>
@@ -681,7 +1099,7 @@ export default function InventoryPage() {
                 type="button"
                 disabled={deleting}
                 onClick={handleDeleteItem}
-                className="bg-error text-on-error font-title-sm text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-1.5 shadow hover:bg-error/90 transition-all disabled:opacity-50"
+                className="bg-error text-on-error font-title-sm text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-1.5 shadow hover:bg-error/90 transition-all disabled:opacity-50 cursor-pointer"
               >
                 {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 {deleting ? 'Eliminando...' : 'Sí, Eliminar'}

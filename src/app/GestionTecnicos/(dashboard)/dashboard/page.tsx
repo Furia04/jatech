@@ -16,15 +16,27 @@ import {
   Calendar,
   MessageSquare,
   ShieldAlert,
+  Package,
+  FolderPlus,
+  Plus,
+  Edit,
+  Tag,
 } from 'lucide-react';
-import { UserProfile, ServiceOrder, OrderStatus, Shop } from '@/types';
+import { UserProfile, ServiceOrder, OrderStatus, Shop, InventoryItem } from '@/types';
 import { hasFinancialAccess } from '@/lib/permissions';
-import { fetchServiceOrders, getCurrentUserProfile, updateServiceOrderStatus, fetchCurrentShop } from '@/lib/supabase/services';
+import {
+  fetchServiceOrders,
+  fetchInventory,
+  getCurrentUserProfile,
+  updateServiceOrderStatus,
+  fetchCurrentShop,
+} from '@/lib/supabase/services';
 import { WhatsAppModal, WhatsAppTemplateKey } from '@/components/orders/whatsapp-modal';
 import { CashRegisterModal } from '@/components/dashboard/cash-register-modal';
 
 export default function DashboardPage() {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [shop, setShop] = useState<Shop | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,14 +48,16 @@ export default function DashboardPage() {
     async function loadDashboardData() {
       setLoading(true);
       try {
-        const [profile, realOrders, realShop] = await Promise.all([
+        const [profile, realOrders, realShop, realInventory] = await Promise.all([
           getCurrentUserProfile(),
           fetchServiceOrders(),
           fetchCurrentShop(),
+          fetchInventory(),
         ]);
         setUserProfile(profile);
         setOrders(realOrders || []);
         setShop(realShop);
+        setInventory(realInventory || []);
       } catch (err) {
         console.error('Error al cargar datos del panel:', err);
       } finally {
@@ -65,6 +79,12 @@ export default function DashboardPage() {
   const readyOrders = orders.filter((o) => o.status === 'para_entregar').length;
 
   const totalRevenue = orders.reduce((sum, o) => sum + (o.final_price || 0), 0);
+
+  // MÉTRICAS DE INVENTARIO Y CATEGORÍAS
+  const totalStockUnits = inventory.reduce((acc, i) => acc + (i.stock || 0), 0);
+  const lowStockItems = inventory.filter((i) => i.stock <= i.min_stock);
+  const inventoryCategories = Array.from(new Set(inventory.map((i) => i.category).filter(Boolean)));
+  const totalInventoryCost = inventory.reduce((acc, i) => acc + (i.cost || 0) * (i.stock || 0), 0);
 
   // ALERTA DE ÓRDENES CON MÁS DE 30 DÍAS DE INGRESO (EN RIESGO / VENCIDAS)
   const thirtyDaysAgo = new Date();
@@ -118,7 +138,7 @@ export default function DashboardPage() {
             Panel Principal del Taller
           </h2>
           <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-            Resumen técnico y operativo del taller en tiempo real.
+            Resumen técnico, operativo e inventario de repuestos en tiempo real.
           </p>
         </div>
 
@@ -151,52 +171,52 @@ export default function DashboardPage() {
                   <ClipboardList className="w-5 h-5" />
                 </span>
               </div>
-              <div className="font-display-lg text-3xl font-bold text-on-surface">
+              <div className="font-display-lg text-3xl font-bold text-on-surface font-mono-data">
                 {totalOrders}
               </div>
               <div className="font-mono-data text-xs text-on-surface-variant mt-1">
-                Registradas en la base de datos
+                Registradas en el sistema
               </div>
             </div>
 
             <div className="bg-surface-container border border-outline-variant rounded-xl p-5 flex flex-col justify-between">
               <div className="flex justify-between items-start mb-2">
                 <span className="font-label-caps text-label-caps text-on-surface-variant uppercase font-semibold">
-                  PENDIENTES
+                  EN REVISIÓN / ESPERA
                 </span>
-                <span className="bg-tertiary-container/20 text-tertiary p-2 rounded-lg">
-                  <Clock className="w-5 h-5" />
+                <span className="bg-primary/10 text-primary p-2 rounded-lg">
+                  <Clock className="w-5 h-5 text-amber-400" />
                 </span>
               </div>
-              <div className="font-display-lg text-3xl font-bold text-on-surface">
+              <div className="font-display-lg text-3xl font-bold text-amber-400 font-mono-data">
                 {pendingOrders}
               </div>
               <div className="font-mono-data text-xs text-on-surface-variant mt-1">
-                En revisión o esperando insumos
+                Órdenes en proceso técnico
               </div>
             </div>
 
             <div className="bg-surface-container border border-outline-variant rounded-xl p-5 flex flex-col justify-between">
               <div className="flex justify-between items-start mb-2">
                 <span className="font-label-caps text-label-caps text-on-surface-variant uppercase font-semibold">
-                  PARA ENTREGAR
+                  LISTAS PARA ENTREGAR
                 </span>
-                <span className="bg-emerald-500/20 text-emerald-400 p-2 rounded-lg">
-                  <CheckCircle2 className="w-5 h-5" />
+                <span className="bg-primary/10 text-primary p-2 rounded-lg">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                 </span>
               </div>
-              <div className="font-display-lg text-3xl font-bold text-emerald-400">
+              <div className="font-display-lg text-3xl font-bold text-emerald-400 font-mono-data">
                 {readyOrders}
               </div>
               <div className="font-mono-data text-xs text-on-surface-variant mt-1">
-                Listas para devolución al cliente
+                Equipos reparados / terminados
               </div>
             </div>
 
             <div className="bg-surface-container border border-outline-variant rounded-xl p-5 flex flex-col justify-between">
               <div className="flex justify-between items-start mb-2">
                 <span className="font-label-caps text-label-caps text-on-surface-variant uppercase font-semibold">
-                  RECAUDACIÓN ACUMULADA
+                  FACTURACIÓN TOTAL
                 </span>
                 <span className="bg-primary/10 text-primary p-2 rounded-lg">
                   <DollarSign className="w-5 h-5 text-emerald-400" />
@@ -221,6 +241,85 @@ export default function DashboardPage() {
                   </div>
                 </>
               )}
+            </div>
+          </div>
+
+          {/* SECCIÓN DE INVENTARIO Y CATEGORÍAS (ACCESO DIRECTO) */}
+          <div className="bg-surface-container border border-outline-variant rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-outline-variant/60 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <Package className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-title-sm text-base font-bold text-on-surface flex items-center gap-2">
+                    Inventario & Repuestos del Taller
+                  </h3>
+                  <p className="text-xs text-on-surface-variant">
+                    {inventory.length} repuestos registrados • {totalStockUnits} unidades en stock • {inventoryCategories.length} categorías
+                  </p>
+                </div>
+              </div>
+
+              {/* Botones de Acción Rápida de Inventario */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Link
+                  href="/GestionTecnicos/inventory"
+                  className="bg-surface-container-high border border-outline-variant hover:bg-surface-container-highest text-on-surface px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                >
+                  <FolderPlus className="w-4 h-4 text-primary" /> + Añadir Categoría
+                </Link>
+
+                <Link
+                  href="/GestionTecnicos/inventory"
+                  className="bg-primary/20 border border-primary/40 hover:bg-primary/30 text-primary px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                >
+                  <Plus className="w-4 h-4" /> + Agregar Repuesto
+                </Link>
+
+                <Link
+                  href="/GestionTecnicos/inventory"
+                  className="bg-primary text-on-primary hover:bg-primary-container px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow"
+                >
+                  <Edit className="w-3.5 h-3.5" /> Editar / Ver Todo
+                </Link>
+              </div>
+            </div>
+
+            {/* Subtarjetas de Métricas de Repuestos */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              <div className="bg-surface-container-low border border-outline-variant/50 rounded-xl p-3.5 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-on-surface-variant uppercase">Categorías Activas</span>
+                  <div className="font-mono font-bold text-lg text-on-surface mt-0.5">{inventoryCategories.length}</div>
+                  <span className="text-[10px] text-primary">{inventoryCategories.slice(0, 3).join(', ')}{inventoryCategories.length > 3 ? '...' : ''}</span>
+                </div>
+                <Tag className="w-6 h-6 text-primary/40" />
+              </div>
+
+              <div className="bg-surface-container-low border border-outline-variant/50 rounded-xl p-3.5 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-on-surface-variant uppercase">Stock Bajo / Crítico</span>
+                  <div className={`font-mono font-bold text-lg mt-0.5 ${lowStockItems.length > 0 ? 'text-error' : 'text-emerald-400'}`}>
+                    {lowStockItems.length} {lowStockItems.length > 0 ? '⚠️' : '✓'}
+                  </div>
+                  <span className="text-[10px] text-on-surface-variant">
+                    {lowStockItems.length > 0 ? 'Repuestos para reponer' : 'Todos con stock óptimo'}
+                  </span>
+                </div>
+                <AlertTriangle className={`w-6 h-6 ${lowStockItems.length > 0 ? 'text-error/60 animate-pulse' : 'text-emerald-400/40'}`} />
+              </div>
+
+              <div className="bg-surface-container-low border border-outline-variant/50 rounded-xl p-3.5 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-on-surface-variant uppercase">Valorización Stock</span>
+                  <div className="font-mono font-bold text-lg text-emerald-400 mt-0.5">
+                    {canSeeMoney ? `$${totalInventoryCost.toLocaleString('es-AR', { minimumFractionDigits: 0 })}` : '****'}
+                  </div>
+                  <span className="text-[10px] text-on-surface-variant">Costo total inventariado</span>
+                </div>
+                <DollarSign className="w-6 h-6 text-emerald-400/40" />
+              </div>
             </div>
           </div>
 
@@ -352,30 +451,20 @@ export default function DashboardPage() {
                         <td className="px-table-cell-padding-h py-table-cell-padding-v text-primary font-bold">
                           {ord.tracking_code}
                         </td>
-                        <td className="px-table-cell-padding-h py-table-cell-padding-v text-on-surface">
-                          <div>
-                            <span className="font-bold">{ord.customer_name}</span>
-                            {ord.customer_document_id && (
-                              <span className="text-[10px] text-on-surface-variant block">
-                                DNI: {ord.customer_document_id}
-                              </span>
-                            )}
-                          </div>
+                        <td className="px-table-cell-padding-h py-table-cell-padding-v text-on-surface font-sans">
+                          <span className="font-semibold">{ord.customer_name}</span>
+                          <span className="text-[10px] text-on-surface-variant block font-mono">
+                            DNI: {ord.customer_document_id || 'S/D'} • {ord.customer_phone || 'S/T'}
+                          </span>
                         </td>
-                        <td className="px-table-cell-padding-h py-table-cell-padding-v text-on-surface-variant">
+                        <td className="px-table-cell-padding-h py-table-cell-padding-v text-on-surface-variant font-sans">
                           {ord.device_info}
                         </td>
                         <td className="px-table-cell-padding-h py-table-cell-padding-v">
                           {getStatusBadge(ord.status)}
                         </td>
-                        <td className="px-table-cell-padding-h py-table-cell-padding-v text-right text-on-surface font-bold">
-                          {canSeeMoney ? (
-                            `$${ord.final_price?.toFixed(2)}`
-                          ) : (
-                            <span className="text-on-surface-variant/40 italic">
-                              --
-                            </span>
-                          )}
+                        <td className="px-table-cell-padding-h py-table-cell-padding-v font-bold text-on-surface text-right font-mono">
+                          ${(ord.final_price || 0).toFixed(2)}
                         </td>
                       </tr>
                     ))}
@@ -387,7 +476,7 @@ export default function DashboardPage() {
         </>
       )}
 
-      {/* CENTRO DE NOTIFICACIONES WHATSAPP */}
+      {/* MODAL PARA ENVIAR NOTIFICACIÓN WHATSAPP DESDE EL DASHBOARD */}
       {whatsappModalOrder && (
         <WhatsAppModal
           order={whatsappModalOrder}
@@ -397,13 +486,12 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* MODAL DE CIERRE DE CAJA / ARQUEO */}
+      {/* MODAL DE ARQUEO / CIERRE DE CAJA */}
       {showCashRegister && (
         <CashRegisterModal
-          isOpen={showCashRegister}
-          onClose={() => setShowCashRegister(false)}
           orders={orders}
           shop={shop}
+          onClose={() => setShowCashRegister(false)}
         />
       )}
     </div>

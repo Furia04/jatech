@@ -1087,6 +1087,41 @@ export async function createInventoryItem(itemData: {
   return data;
 }
 
+export async function updateInventoryItem(
+  itemId: string,
+  itemData: {
+    sku?: string;
+    name?: string;
+    category?: string;
+    stock?: number;
+    min_stock?: number;
+    cost?: number;
+    price?: number;
+  }
+): Promise<InventoryItem> {
+  const profile = await getCurrentUserProfile();
+  const shopId = profile?.shop_id || profile?.id;
+  if (!shopId) throw new Error('Debe iniciar sesión para editar repuestos.');
+
+  const updatePayload: any = {};
+  if (itemData.sku !== undefined) updatePayload.sku = itemData.sku.trim();
+  if (itemData.name !== undefined) updatePayload.name = itemData.name.trim();
+  if (itemData.category !== undefined) updatePayload.category = itemData.category.trim();
+  if (itemData.stock !== undefined) updatePayload.stock = Math.max(0, itemData.stock);
+  if (itemData.min_stock !== undefined) updatePayload.min_stock = Math.max(0, itemData.min_stock);
+  if (itemData.cost !== undefined) updatePayload.cost = itemData.cost;
+  if (itemData.price !== undefined) updatePayload.price = itemData.price;
+
+  let query = supabase.from('inventory').update(updatePayload).eq('id', itemId);
+  if (shopId && profile?.role !== 'superadmin') {
+    query = query.eq('shop_id', shopId);
+  }
+
+  const { data, error } = await query.select().single();
+  if (error) throw error;
+  return data;
+}
+
 export async function updateInventoryStock(itemId: string, newStock: number): Promise<boolean> {
   try {
     const { error } = await supabase
