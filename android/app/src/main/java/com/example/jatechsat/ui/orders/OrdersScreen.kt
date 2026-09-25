@@ -606,7 +606,7 @@ fun NewOrderDialog(
                         return@Button
                     }
                     isSaving = true
-                    val code = "#" + (1000..9999).random()
+                    val code = "#WO-" + (1000..9999).random()
                     val order = ServiceOrder(
                         id = UUID.randomUUID().toString(),
                         shopId = shopId,

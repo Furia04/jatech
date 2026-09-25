@@ -743,6 +743,52 @@ export async function updateServiceOrderStatus(
   }
 }
 
+export async function deleteServiceOrder(orderId: string, trackingCode?: string): Promise<boolean> {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+  const profile = await getCurrentUserProfile();
+  const shopId = profile?.shop_id || profile?.id;
+
+  // 1. Eliminar de localStorage si existe
+  if (typeof window !== 'undefined') {
+    try {
+      const storedStr = localStorage.getItem('prorepair_local_orders');
+      if (storedStr) {
+        const localOrders = JSON.parse(storedStr);
+        const filtered = localOrders.filter((o: any) => o.id !== orderId && o.tracking_code !== (trackingCode || orderId));
+        localStorage.setItem('prorepair_local_orders', JSON.stringify(filtered));
+      }
+    } catch (e) {
+      console.warn('Error al eliminar orden de localStorage:', e);
+    }
+  }
+
+  // 2. Eliminar de Supabase
+  try {
+    let query = supabase.from('service_orders').delete();
+    if (isUuid) {
+      query = query.eq('id', orderId);
+    } else if (trackingCode) {
+      query = query.eq('tracking_code', trackingCode);
+    } else {
+      query = query.eq('tracking_code', orderId);
+    }
+
+    if (shopId && profile?.role !== 'superadmin') {
+      query = query.eq('shop_id', shopId);
+    }
+
+    const { error } = await query;
+    if (error) {
+      console.error('Error al eliminar orden en Supabase:', error);
+      throw error;
+    }
+    return true;
+  } catch (err) {
+    if (!isUuid) return true;
+    throw err;
+  }
+}
+
 // =======================================================
 // CLIENTES (MULTI-TENANT REAL)
 // =======================================================

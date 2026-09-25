@@ -29,6 +29,7 @@ import {
   ShieldCheck,
   PackageCheck,
   Camera,
+  Trash2,
 } from 'lucide-react';
 import { PatternLockInput } from '@/components/orders/pattern-lock-input';
 import { InventoryItem, OrderStatus, ServiceOrder, Shop, UserProfile } from '@/types';
@@ -37,7 +38,7 @@ import { ThermalTicket } from '@/components/orders/thermal-ticket';
 import { DeliveryTicket } from '@/components/orders/delivery-ticket';
 import { PhotoUploader } from '@/components/orders/photo-uploader';
 import { WhatsAppModal, WhatsAppTemplateKey } from '@/components/orders/whatsapp-modal';
-import { fetchServiceOrders, updateServiceOrderStatus, fetchInventory, fetchCurrentShop } from '@/lib/supabase/services';
+import { fetchServiceOrders, updateServiceOrderStatus, deleteServiceOrder, fetchInventory, fetchCurrentShop } from '@/lib/supabase/services';
 import { supabase } from '@/lib/supabase/client';
 
 export default function ServiceOrdersPage() {
@@ -55,6 +56,10 @@ export default function ServiceOrdersPage() {
   const [deliveryTicketOrder, setDeliveryTicketOrder] = useState<ServiceOrder | null>(null);
   const [activeModalTab, setActiveModalTab] = useState<'details' | 'budget' | 'photos'>('details');
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // Estado para Eliminación de Órdenes
+  const [orderToDelete, setOrderToDelete] = useState<ServiceOrder | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Estado para Centro de Notificaciones WhatsApp
   const [whatsappModalOrder, setWhatsappModalOrder] = useState<ServiceOrder | null>(null);
@@ -171,6 +176,26 @@ export default function ServiceOrdersPage() {
     } catch (err: any) {
       console.error('Error al guardar la orden de servicio en Supabase:', err);
       alert(`Error al guardar los cambios: ${err?.message || 'Revisa la conexión con Supabase'}`);
+    }
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    setDeleting(true);
+    try {
+      await deleteServiceOrder(orderToDelete.id, orderToDelete.tracking_code);
+      setOrders((prev) =>
+        prev.filter((o) => o.id !== orderToDelete.id && o.tracking_code !== orderToDelete.tracking_code)
+      );
+      if (editingOrder?.id === orderToDelete.id || editingOrder?.tracking_code === orderToDelete.tracking_code) {
+        setEditingOrder(null);
+      }
+      setOrderToDelete(null);
+    } catch (err: any) {
+      console.error('Error al eliminar orden de servicio:', err);
+      alert(`No se pudo eliminar la orden: ${err?.message || 'Error desconocido'}`);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -425,6 +450,15 @@ export default function ServiceOrdersPage() {
                           <MessageSquare className="w-3.5 h-3.5" />
                         </button>
                       )}
+
+                      {/* Botón Eliminar Orden */}
+                      <button
+                        onClick={() => setOrderToDelete(ord)}
+                        className="p-1.5 bg-red-950/30 border border-red-500/30 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors inline-flex items-center cursor-pointer"
+                        title="Eliminar Orden"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -731,27 +765,38 @@ export default function ServiceOrdersPage() {
             )}
 
             <div className="flex justify-between items-center pt-2 border-t border-outline-variant/60">
-              {editingOrder.status === 'entregado' ? (
+              <div className="flex items-center gap-2">
+                {editingOrder.status === 'entregado' ? (
+                  <button
+                    onClick={() => {
+                      setDeliveryTicketOrder(editingOrder);
+                      setEditingOrder(null);
+                    }}
+                    className="px-3.5 py-2 bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-600/30 rounded-xl text-xs font-bold flex items-center gap-1.5"
+                  >
+                    <PackageCheck className="w-4 h-4 text-emerald-400" /> Ticket & Comanda de Entrega
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setPrintingOrder(editingOrder);
+                      setEditingOrder(null);
+                    }}
+                    className="px-3.5 py-2 bg-surface-bright border border-outline-variant text-on-surface hover:bg-surface-container-highest rounded-xl text-xs font-bold flex items-center gap-1.5"
+                  >
+                    <Printer className="w-4 h-4 text-purple-400" /> Imprimir Comanda 80mm
+                  </button>
+                )}
+
                 <button
-                  onClick={() => {
-                    setDeliveryTicketOrder(editingOrder);
-                    setEditingOrder(null);
-                  }}
-                  className="px-3.5 py-2 bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-600/30 rounded-xl text-xs font-bold flex items-center gap-1.5"
+                  type="button"
+                  onClick={() => setOrderToDelete(editingOrder)}
+                  className="px-3 py-2 bg-red-950/40 border border-red-500/40 text-red-400 hover:bg-red-600/30 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+                  title="Eliminar esta orden de servicio"
                 >
-                  <PackageCheck className="w-4 h-4 text-emerald-400" /> Ticket & Comanda de Entrega
+                  <Trash2 className="w-4 h-4" /> Eliminar
                 </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setPrintingOrder(editingOrder);
-                    setEditingOrder(null);
-                  }}
-                  className="px-3.5 py-2 bg-surface-bright border border-outline-variant text-on-surface hover:bg-surface-container-highest rounded-xl text-xs font-bold flex items-center gap-1.5"
-                >
-                  <Printer className="w-4 h-4 text-purple-400" /> Imprimir Comanda 80mm
-                </button>
-              )}
+              </div>
 
               <div className="flex gap-2">
                 <button
@@ -767,6 +812,51 @@ export default function ServiceOrdersPage() {
                   <Save className="w-4 h-4" /> Guardar Cambios
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
+      {orderToDelete && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-surface-container border border-red-500/40 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-red-400">
+              <div className="p-3 bg-red-500/20 rounded-xl">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-on-surface">¿Eliminar Orden de Trabajo?</h3>
+                <p className="text-xs text-on-surface-variant font-mono">{orderToDelete.tracking_code} - {orderToDelete.customer_name}</p>
+              </div>
+            </div>
+            <p className="text-xs text-on-surface-variant leading-relaxed">
+              Esta acción eliminará de forma permanente esta orden de servicio de la base de datos, incluyendo su historial técnico y repuestos asociados.
+              <strong className="text-red-300 block mt-1.5">⚠️ Esta acción no se puede deshacer.</strong>
+            </p>
+            <div className="flex justify-end gap-2 pt-2 border-t border-outline-variant/40">
+              <button
+                onClick={() => setOrderToDelete(null)}
+                disabled={deleting}
+                className="px-4 py-2 text-xs font-bold text-on-surface-variant hover:bg-surface-container-highest rounded-xl transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteOrder}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50"
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" /> Confirmar Eliminación
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
