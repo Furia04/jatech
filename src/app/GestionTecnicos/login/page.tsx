@@ -57,7 +57,9 @@ function LoginForm() {
         return;
       }
 
-      router.push('/GestionTecnicos/dashboard');
+      const redirectParam = searchParams.get('redirect');
+      const targetDestination = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/GestionTecnicos/dashboard';
+      router.push(targetDestination);
       router.refresh();
     } catch (err: any) {
       setErrorMessage(err?.message || 'Error de conexión al autenticar.');

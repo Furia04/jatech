@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Wrench, Mail, Lock, User, Building2, Phone, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Wrench, Mail, Lock, User, Building2, Phone, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { Shop } from '@/types';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
 
   // Paso 1: Datos del Taller / Negocio
   const [shopName, setShopName] = useState('');
@@ -64,6 +66,16 @@ export default function RegisterPage() {
         return;
       }
 
+      // Intentar iniciar sesión automáticamente para hidratar cookies de sesión
+      try {
+        await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        });
+      } catch (loginErr) {
+        // En caso de que requiera confirmación de email, continuará con los parámetros URL
+      }
+
       const userId = authData?.user?.id;
       const generatedShopId = userId || `shop-${Date.now()}`;
 
@@ -111,27 +123,34 @@ export default function RegisterPage() {
 
       if (typeof window !== 'undefined') {
         try {
+          localStorage.setItem('prorepair_current_shop_id', generatedShopId);
+          localStorage.setItem('prorepair_current_shop_email', cleanEmail);
+          localStorage.setItem('prorepair_current_shop_name', cleanShopName);
+
           const storedShopsStr = localStorage.getItem('prorepair_registered_shops');
           const existingShops: Shop[] = storedShopsStr ? JSON.parse(storedShopsStr) : [];
           const filtered = existingShops.filter((s) => s.owner_email.toLowerCase() !== cleanEmail);
           const updatedShops = [newShopObj, ...filtered];
           localStorage.setItem('prorepair_registered_shops', JSON.stringify(updatedShops));
 
-          // Transmitir evento para que el panel admin lo detecte de inmediato
           window.dispatchEvent(new Event('prorepair_shop_updated'));
         } catch (e) {
           console.warn('Error al guardar taller en localStorage');
         }
       }
 
+      const checkoutUrl = `/GestionTecnicos/checkout?shop_id=${encodeURIComponent(generatedShopId)}&email=${encodeURIComponent(cleanEmail)}&name=${encodeURIComponent(cleanShopName)}`;
+      const targetDestination = redirectParam && redirectParam.startsWith('/') ? redirectParam : checkoutUrl;
+
       setSuccessMessage('¡Taller registrado exitosamente! Redirigiendo al checkout...');
       setTimeout(() => {
-        router.push('/GestionTecnicos/checkout');
-      }, 1200);
+        router.push(targetDestination);
+      }, 1000);
     } catch (err: any) {
+      const fallbackUrl = `/GestionTecnicos/checkout?email=${encodeURIComponent(email.trim().toLowerCase())}&name=${encodeURIComponent(shopName.trim())}`;
       setSuccessMessage('¡Taller registrado! Redirigiendo...');
       setTimeout(() => {
-        router.push('/GestionTecnicos/checkout');
+        router.push(fallbackUrl);
       }, 1000);
     } finally {
       setLoading(false);
@@ -300,12 +319,29 @@ export default function RegisterPage() {
         <div className="text-center border-t border-outline-variant/40 pt-4">
           <p className="font-body-sm text-xs text-on-surface-variant">
             ¿Ya tienes un taller registrado?{' '}
-            <Link href="/GestionTecnicos/login" className="text-primary font-bold hover:underline">
+            <Link
+              href={redirectParam ? `/GestionTecnicos/login?redirect=${encodeURIComponent(redirectParam)}` : '/GestionTecnicos/login'}
+              className="text-primary font-bold hover:underline"
+            >
               Iniciar Sesión
             </Link>
           </p>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        </div>
+      }
+    >
+      <RegisterForm />
+    </Suspense>
   );
 }

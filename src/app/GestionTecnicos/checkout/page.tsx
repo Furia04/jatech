@@ -41,6 +41,8 @@ function CheckoutContent() {
 
   const statusParam = searchParams.get('status') || searchParams.get('collection_status');
   const shopIdParam = searchParams.get('shop_id');
+  const emailParam = searchParams.get('email');
+  const nameParam = searchParams.get('name');
   const isTrialParam = searchParams.get('trial_started') === 'true';
   const isSimulated = searchParams.get('simulated') === 'true';
 
@@ -53,7 +55,94 @@ function CheckoutContent() {
           fetchCurrentShop(),
         ]);
         setUser(profile);
-        setShop(currentShop);
+
+        let resolvedShop = currentShop;
+
+        // 1. Si no hay taller activo en sesión pero viene por parámetro en URL:
+        if ((!resolvedShop || resolvedShop.id === 'temp') && shopIdParam) {
+          try {
+            const { data: dbShop } = await supabase
+              .from('shops')
+              .select('*')
+              .eq('id', shopIdParam)
+              .maybeSingle();
+
+            if (dbShop) {
+              resolvedShop = {
+                id: dbShop.id,
+                name: dbShop.name || (nameParam ? decodeURIComponent(nameParam) : 'Mi Taller'),
+                owner_email: dbShop.owner_email || (emailParam ? decodeURIComponent(emailParam) : ''),
+                subscription_status: dbShop.subscription_status || 'pending_payment',
+                plan_price: Number(dbShop.plan_price) || 20000,
+                active: dbShop.active ?? false,
+                trial_ends_at: dbShop.trial_ends_at,
+                created_at: dbShop.created_at,
+                settings: dbShop.settings || {},
+              };
+            }
+          } catch (e) {
+            console.warn('Error al consultar taller por shop_id param:', e);
+          }
+
+          if (!resolvedShop) {
+            resolvedShop = {
+              id: shopIdParam,
+              name: nameParam ? decodeURIComponent(nameParam) : 'Mi Taller',
+              owner_email: emailParam ? decodeURIComponent(emailParam) : '',
+              subscription_status: 'pending_payment',
+              plan_price: 20000,
+              active: false,
+              created_at: new Date().toISOString(),
+              settings: {},
+            };
+          }
+        }
+
+        // 2. Si aún no se encontró, verificar datos cacheados en localStorage
+        if (!resolvedShop && typeof window !== 'undefined') {
+          try {
+            const localShopId = localStorage.getItem('prorepair_current_shop_id');
+            const localEmail = localStorage.getItem('prorepair_current_shop_email');
+            const localName = localStorage.getItem('prorepair_current_shop_name');
+
+            if (localShopId) {
+              const { data: dbShop } = await supabase
+                .from('shops')
+                .select('*')
+                .eq('id', localShopId)
+                .maybeSingle();
+
+              if (dbShop) {
+                resolvedShop = {
+                  id: dbShop.id,
+                  name: dbShop.name || localName || 'Mi Taller',
+                  owner_email: dbShop.owner_email || localEmail || '',
+                  subscription_status: dbShop.subscription_status || 'pending_payment',
+                  plan_price: Number(dbShop.plan_price) || 20000,
+                  active: dbShop.active ?? false,
+                  trial_ends_at: dbShop.trial_ends_at,
+                  created_at: dbShop.created_at,
+                  settings: dbShop.settings || {},
+                };
+              } else {
+                resolvedShop = {
+                  id: localShopId,
+                  name: localName || 'Mi Taller',
+                  owner_email: localEmail || '',
+                  subscription_status: 'pending_payment',
+                  plan_price: 20000,
+                  active: false,
+                  created_at: new Date().toISOString(),
+                  settings: {},
+                };
+              }
+            }
+          } catch (e) {
+            console.warn('Error al recuperar taller local:', e);
+          }
+        }
+
+        setShop(resolvedShop);
       } catch (err) {
         console.warn('No se pudieron obtener datos del taller:', err);
       } finally {
@@ -61,7 +150,7 @@ function CheckoutContent() {
       }
     }
     loadData();
-  }, []);
+  }, [shopIdParam, emailParam, nameParam]);
 
   // Detectar si el usuario regresó de Mercado Pago con prueba o pago aprobado
   useEffect(() => {
@@ -120,12 +209,12 @@ function CheckoutContent() {
 
     try {
       const targetShopId = shop?.id || user?.shop_id || shopIdParam || user?.id;
-      const targetEmail = user?.email || shop?.owner_email || '';
-      const targetShopName = shop?.name || (user?.full_name ? `Taller de ${user?.full_name}` : 'Taller Pro');
+      const targetEmail = user?.email || shop?.owner_email || emailParam || '';
+      const targetShopName = shop?.name || (nameParam ? decodeURIComponent(nameParam) : (user?.full_name ? `Taller de ${user?.full_name}` : 'Taller Pro'));
 
       if (!targetShopId) {
-        setErrorMessage('Debes iniciar sesión o registrar tu taller antes de comenzar la prueba.');
-        setProcessingSubscription(false);
+        // Redirigir suavemente al registro si no hay taller configurado
+        router.push('/GestionTecnicos/register?redirect=/GestionTecnicos/checkout');
         return;
       }
 
@@ -166,12 +255,11 @@ function CheckoutContent() {
 
     try {
       const targetShopId = shop?.id || user?.shop_id || shopIdParam || user?.id;
-      const targetEmail = user?.email || shop?.owner_email || '';
-      const targetShopName = shop?.name || (user?.full_name ? `Taller de ${user?.full_name}` : 'Taller Pro');
+      const targetEmail = user?.email || shop?.owner_email || emailParam || '';
+      const targetShopName = shop?.name || (nameParam ? decodeURIComponent(nameParam) : (user?.full_name ? `Taller de ${user?.full_name}` : 'Taller Pro'));
 
       if (!targetShopId) {
-        setErrorMessage('Debes iniciar sesión o registrar tu taller antes de pagar.');
-        setProcessingDirectPayment(false);
+        router.push('/GestionTecnicos/register?redirect=/GestionTecnicos/checkout');
         return;
       }
 
@@ -253,6 +341,32 @@ function CheckoutContent() {
             </span>
           </div>
         </div>
+
+        {!loadingShop && !user && !shop?.id && (
+          <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs animate-in fade-in duration-200">
+            <div className="flex items-center gap-2.5 text-amber-300">
+              <AlertCircle className="w-5 h-5 shrink-0 text-amber-400" />
+              <div>
+                <span className="font-bold block text-amber-200">Paso previo requerido:</span>
+                <span className="text-on-surface-variant">Para asociar tus 14 días de prueba gratis, registra tu taller o inicia sesión.</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              <Link
+                href="/GestionTecnicos/register?redirect=/GestionTecnicos/checkout"
+                className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-3.5 py-2 rounded-xl transition-all text-center text-xs whitespace-nowrap w-full sm:w-auto shadow-md"
+              >
+                Registrar Taller (1 min)
+              </Link>
+              <Link
+                href="/GestionTecnicos/login?redirect=/GestionTecnicos/checkout"
+                className="bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant text-on-surface font-bold px-3.5 py-2 rounded-xl transition-all text-center text-xs whitespace-nowrap"
+              >
+                Iniciar Sesión
+              </Link>
+            </div>
+          </div>
+        )}
 
         {errorMessage && (
           <div className="bg-error/10 border border-error/30 text-error p-4 rounded-xl text-xs font-semibold flex items-center gap-2">

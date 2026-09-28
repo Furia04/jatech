@@ -469,7 +469,7 @@ export default function SuperAdminDashboardPage() {
 
                         <button
                           onClick={() => {
-                            const link = `${window.location.origin}/checkout?shop_id=${shop.id}`;
+                            const link = `${window.location.origin}/GestionTecnicos/checkout?shop_id=${shop.id}`;
                             navigator.clipboard.writeText(link);
                             setCopiedShopId(shop.id);
                             setTimeout(() => setCopiedShopId(null), 2000);

@@ -27,8 +27,8 @@ export async function POST(request: Request) {
       console.warn('MP_ACCESS_TOKEN no configurado. Operando en modo simulación de checkout.');
       return NextResponse.json({
         id: `sim-pref-${Date.now()}`,
-        init_point: `${baseUrl}/checkout?status=success&shop_id=${encodeURIComponent(shopId)}&simulated=true`,
-        sandbox_init_point: `${baseUrl}/checkout?status=success&shop_id=${encodeURIComponent(shopId)}&simulated=true`,
+        init_point: `${baseUrl}/GestionTecnicos/checkout?status=success&shop_id=${encodeURIComponent(shopId)}&simulated=true`,
+        sandbox_init_point: `${baseUrl}/GestionTecnicos/checkout?status=success&shop_id=${encodeURIComponent(shopId)}&simulated=true`,
         simulated: true,
       });
     }
@@ -62,9 +62,9 @@ export async function POST(request: Request) {
         : undefined,
       external_reference: shopId,
       back_urls: {
-        success: `${baseUrl}/checkout?status=success&shop_id=${encodeURIComponent(shopId)}`,
-        failure: `${baseUrl}/checkout?status=failure&shop_id=${encodeURIComponent(shopId)}`,
-        pending: `${baseUrl}/checkout?status=pending&shop_id=${encodeURIComponent(shopId)}`,
+        success: `${baseUrl}/GestionTecnicos/checkout?status=success&shop_id=${encodeURIComponent(shopId)}`,
+        failure: `${baseUrl}/GestionTecnicos/checkout?status=failure&shop_id=${encodeURIComponent(shopId)}`,
+        pending: `${baseUrl}/GestionTecnicos/checkout?status=pending&shop_id=${encodeURIComponent(shopId)}`,
       },
       statement_descriptor: 'JATECH PRO',
     };

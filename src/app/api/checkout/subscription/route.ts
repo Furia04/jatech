@@ -26,8 +26,8 @@ export async function POST(request: Request) {
       console.warn('MP_ACCESS_TOKEN no configurado. Operando en modo simulación de suscripción con 14 días de prueba.');
       return NextResponse.json({
         id: `sim-sub-${Date.now()}`,
-        init_point: `${baseUrl}/checkout?status=success&trial_started=true&shop_id=${encodeURIComponent(shopId)}&simulated=true`,
-        sandbox_init_point: `${baseUrl}/checkout?status=success&trial_started=true&shop_id=${encodeURIComponent(shopId)}&simulated=true`,
+        init_point: `${baseUrl}/GestionTecnicos/checkout?status=success&trial_started=true&shop_id=${encodeURIComponent(shopId)}&simulated=true`,
+        sandbox_init_point: `${baseUrl}/GestionTecnicos/checkout?status=success&trial_started=true&shop_id=${encodeURIComponent(shopId)}&simulated=true`,
         simulated: true,
       });
     }
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
           frequency_type: 'days',
         },
       },
-      back_url: `${baseUrl}/checkout?status=success&trial_started=true&shop_id=${encodeURIComponent(shopId)}`,
+      back_url: `${baseUrl}/GestionTecnicos/checkout?status=success&trial_started=true&shop_id=${encodeURIComponent(shopId)}`,
       external_reference: shopId,
     };
 
