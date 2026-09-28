@@ -26,6 +26,7 @@ export type WhatsAppTemplateKey =
   | 'listo'
   | 'repuestos'
   | 'recordatorio'
+  | 'deuda'
   | 'personalizado';
 
 interface WhatsAppModalProps {
@@ -52,7 +53,7 @@ export function WhatsAppModal({
   const cleanTrackingCode = order.tracking_code.replace('#', '');
   const trackingLink = `${siteUrl}/track/${cleanTrackingCode}`;
 
-  const finalPrice = order.final_price || 0;
+  const finalPrice = order.final_price || order.estimated_cost || 0;
   const advancePayment = order.advance_payment || 0;
   const pendingBalance = Math.max(0, finalPrice - advancePayment);
 
@@ -115,6 +116,17 @@ export function WhatsAppModal({
           `👉 Detalle de la orden: ${trackingLink}`
         );
 
+      case 'deuda':
+        return (
+          `💳 Hola ${customerName}, te escribimos de *${shopName}* para recordarte el estado de cuenta pendiente de tu *${deviceInfo}* (Orden *${code}*).\n\n` +
+          `💵 *Total del servicio:* $${finalPrice.toLocaleString('es-AR')}\n` +
+          (advancePayment > 0 ? `🔹 *Seña previa abonada:* $${advancePayment.toLocaleString('es-AR')}\n` : '') +
+          `🔴 *Saldo pendiente de pago:* $${pendingBalance.toLocaleString('es-AR')}\n\n` +
+          `Podés coordinar el pago por transferencia o presencialmente en nuestro taller.\n` +
+          `📄 Detalle de orden y comprobante:\n👉 ${trackingLink}\n\n` +
+          `¡Quedamos a tu disposición!`
+        );
+
       case 'personalizado':
         return customMessage || `Hola ${customerName}, te escribimos de ${shopName} por tu orden ${code}.`;
     }
@@ -169,6 +181,12 @@ export function WhatsAppModal({
       title: '¡Listo para Retiro!',
       icon: <Sparkles className="w-4 h-4 text-emerald-400" />,
       desc: 'Aviso de reparación terminada + saldo',
+    },
+    {
+      key: 'deuda',
+      title: 'Recordatorio de Saldo Pendiente',
+      icon: <Receipt className="w-4 h-4 text-red-400" />,
+      desc: 'Saldo a pagar + link de orden',
     },
     {
       key: 'repuestos',

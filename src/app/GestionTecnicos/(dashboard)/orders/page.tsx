@@ -87,14 +87,38 @@ export default function ServiceOrdersPage() {
     loadData();
   }, []);
 
+  const ordersWithDebt = orders.filter((ord) => {
+    const total = ord.final_price || ord.estimated_cost || 0;
+    const paid = ord.advance_payment || 0;
+    return total > paid;
+  });
+
+  const totalDebtAmount = ordersWithDebt.reduce((acc, ord) => {
+    const total = ord.final_price || ord.estimated_cost || 0;
+    const paid = ord.advance_payment || 0;
+    return acc + (total - paid);
+  }, 0);
+
+  const deliveredWithDebt = ordersWithDebt.filter(ord => ord.status === 'entregado');
+
   const filteredOrders = orders.filter((ord) => {
-    const matchesFilter =
-      activeFilter === 'all' || ord.status === activeFilter;
+    const total = ord.final_price || ord.estimated_cost || 0;
+    const paid = ord.advance_payment || 0;
+    const hasDebt = total > paid;
+
+    let matchesFilter = true;
+    if (activeFilter === 'adeudan') {
+      matchesFilter = hasDebt;
+    } else if (activeFilter !== 'all') {
+      matchesFilter = ord.status === activeFilter;
+    }
+
     const matchesSearch =
       ord.tracking_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ord.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ord.customer_document_id?.includes(searchQuery) ||
       ord.device_info?.toLowerCase().includes(searchQuery.toLowerCase());
+
     return matchesFilter && matchesSearch;
   });
 
@@ -272,6 +296,93 @@ export default function ServiceOrdersPage() {
         </Link>
       </div>
 
+      {/* Resumen Financiero y de Cobranzas */}
+      {!loading && orders.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div
+            onClick={() => setActiveFilter(activeFilter === 'adeudan' ? 'all' : 'adeudan')}
+            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+              activeFilter === 'adeudan'
+                ? 'bg-red-500/15 border-red-500/50 shadow-md ring-1 ring-red-500/30'
+                : 'bg-surface-container border-outline-variant/80 hover:border-red-500/40'
+            }`}
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="font-label-caps text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">
+                  Total por Cobrar (Deuda Total)
+                </span>
+                <div className="font-display-lg text-2xl font-bold text-red-400 font-mono-data mt-1">
+                  ${totalDebtAmount.toLocaleString('es-AR')}
+                </div>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-red-500/15 text-red-400 flex items-center justify-center border border-red-500/30">
+                <DollarSign className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="text-[11px] text-on-surface-variant mt-2 flex items-center gap-1.5">
+              <span className="font-bold text-red-400">{ordersWithDebt.length}</span> {ordersWithDebt.length === 1 ? 'orden con saldo' : 'órdenes con saldo pendiente'} • <span className="underline font-semibold text-primary">Ver todas</span>
+            </div>
+          </div>
+
+          <div
+            onClick={() => setActiveFilter(activeFilter === 'para_entregar' ? 'all' : 'para_entregar')}
+            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+              activeFilter === 'para_entregar'
+                ? 'bg-emerald-500/15 border-emerald-500/50 shadow-md ring-1 ring-emerald-500/30'
+                : 'bg-surface-container border-outline-variant/80 hover:border-emerald-500/40'
+            }`}
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="font-label-caps text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">
+                  Listos para Retiro
+                </span>
+                <div className="font-display-lg text-2xl font-bold text-emerald-400 font-mono-data mt-1">
+                  {orders.filter(o => o.status === 'para_entregar').length}
+                </div>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+                <PackageCheck className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="text-[11px] text-on-surface-variant mt-2">
+              Equipos reparados pendientes de retiro
+            </div>
+          </div>
+
+          <div
+            onClick={() => setActiveFilter(activeFilter === 'adeudan' ? 'all' : 'adeudan')}
+            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+              deliveredWithDebt.length > 0
+                ? 'bg-amber-500/10 border-amber-500/40 hover:border-amber-500/60'
+                : 'bg-surface-container border-outline-variant/80'
+            }`}
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="font-label-caps text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">
+                  Entregados con Saldo
+                </span>
+                <div className={`font-display-lg text-2xl font-bold font-mono-data mt-1 ${deliveredWithDebt.length > 0 ? 'text-amber-400' : 'text-on-surface'}`}>
+                  {deliveredWithDebt.length}
+                </div>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center border border-amber-500/30">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="text-[11px] text-on-surface-variant mt-2">
+              {deliveredWithDebt.length > 0 ? (
+                <span className="text-amber-300 font-semibold">⚠️ Equipos ya entregados que aún adeudan</span>
+              ) : (
+                'Todos los equipos entregados están saldados'
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Barra de Búsqueda y Filtros */}
       <div className="bg-surface-container border border-outline-variant/80 rounded-2xl p-4 space-y-4 shadow-sm">
         <div className="flex flex-col md:flex-row gap-3">
@@ -299,6 +410,7 @@ export default function ServiceOrdersPage() {
         <div className="flex flex-wrap gap-2 pt-2 border-t border-outline-variant/40">
           {[
             { id: 'all', label: 'Todas' },
+            { id: 'adeudan', label: `🔴 Con Deuda (${ordersWithDebt.length})`, isDebt: true },
             { id: 'recibido', label: 'Recibidas' },
             { id: 'en_revision', label: 'En Revisión' },
             { id: 'esperando_repuesto', label: 'Esperando Repuesto' },
@@ -310,9 +422,13 @@ export default function ServiceOrdersPage() {
             <button
               key={tab.id}
               onClick={() => setActiveFilter(tab.id)}
-              className={`px-3 py-1.5 rounded-lg font-title-sm text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-lg font-title-sm text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeFilter === tab.id
-                  ? 'bg-primary text-on-primary shadow-sm'
+                  ? tab.id === 'adeudan'
+                    ? 'bg-red-600 text-white shadow-md'
+                    : 'bg-primary text-on-primary shadow-sm'
+                  : tab.id === 'adeudan'
+                  ? 'bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25'
                   : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
               }`}
             >
@@ -383,19 +499,40 @@ export default function ServiceOrdersPage() {
                       {ord.reported_fault}
                     </td>
                     <td className="p-4">{getStatusBadge(ord.status)}</td>
-                    <td className="p-4 text-right font-bold text-on-surface text-sm">
-                      <div>${(ord.final_price || 0).toLocaleString('es-AR')}</div>
-                      {(ord.advance_payment || 0) > 0 && (
-                        <div className="text-[10px] font-mono">
-                          {(ord.final_price || 0) <= (ord.advance_payment || 0) ? (
-                            <span className="text-emerald-400 font-bold">✓ Saldado</span>
-                          ) : (
-                            <span className="text-amber-400 font-bold">
-                              Resta: ${((ord.final_price || 0) - (ord.advance_payment || 0)).toLocaleString('es-AR')}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                    <td className="p-4 text-right font-mono-data">
+                      {(() => {
+                        const total = ord.final_price || ord.estimated_cost || 0;
+                        const paid = ord.advance_payment || 0;
+                        const debt = Math.max(0, total - paid);
+
+                        return (
+                          <div className="space-y-0.5">
+                            <div className="font-bold text-on-surface text-sm">
+                              ${total.toLocaleString('es-AR')}
+                            </div>
+                            {total === 0 ? (
+                              <span className="text-[10px] text-on-surface-variant font-sans font-semibold">
+                                Sin Cargo / $0
+                              </span>
+                            ) : debt > 0 ? (
+                              <div className="flex flex-col items-end">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/30 text-[10px] font-bold">
+                                  🔴 Adeuda: ${debt.toLocaleString('es-AR')}
+                                </span>
+                                {paid > 0 && (
+                                  <span className="text-[9px] text-on-surface-variant font-mono">
+                                    Seña: ${paid.toLocaleString('es-AR')}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                                ✓ Saldado
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="p-4 text-center space-x-1.5">
                       {/* Botón Editar / Diagnóstico */}
@@ -433,13 +570,21 @@ export default function ServiceOrdersPage() {
                       {ord.customer_phone && (
                         <button
                           onClick={() => {
+                            const total = ord.final_price || ord.estimated_cost || 0;
+                            const paid = ord.advance_payment || 0;
+                            const hasDebt = total > paid;
+
                             const suggestedTemplate: WhatsAppTemplateKey =
-                              ord.status === 'para_entregar'
+                              hasDebt && ord.status === 'entregado'
+                                ? 'deuda'
+                                : ord.status === 'para_entregar'
                                 ? 'listo'
                                 : ord.status === 'en_revision' || ord.status === 'esperando_repuesto'
                                 ? 'presupuesto'
                                 : ord.status === 'abandonado'
                                 ? 'recordatorio'
+                                : hasDebt
+                                ? 'deuda'
                                 : 'ingreso';
                             setWhatsappDefaultTemplate(suggestedTemplate);
                             setWhatsappModalOrder(ord);
