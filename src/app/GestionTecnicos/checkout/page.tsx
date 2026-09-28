@@ -37,6 +37,7 @@ function CheckoutContent() {
   const [errorMessage, setErrorMessage] = useState('');
   const [user, setUser] = useState<UserProfile | null>(null);
   const [shop, setShop] = useState<Shop | null>(null);
+  const [payerEmail, setPayerEmail] = useState('');
   const [loadingShop, setLoadingShop] = useState(true);
 
   const statusParam = searchParams.get('status') || searchParams.get('collection_status');
@@ -55,6 +56,11 @@ function CheckoutContent() {
           fetchCurrentShop(),
         ]);
         setUser(profile);
+
+        const initialEmail = profile?.email || currentShop?.owner_email || (emailParam ? decodeURIComponent(emailParam) : '');
+        if (initialEmail) {
+          setPayerEmail(initialEmail);
+        }
 
         let resolvedShop = currentShop;
 
@@ -209,12 +215,18 @@ function CheckoutContent() {
 
     try {
       const targetShopId = shop?.id || user?.shop_id || shopIdParam || user?.id;
-      const targetEmail = user?.email || shop?.owner_email || emailParam || '';
+      const targetEmail = (payerEmail || user?.email || shop?.owner_email || emailParam || '').trim().toLowerCase();
       const targetShopName = shop?.name || (nameParam ? decodeURIComponent(nameParam) : (user?.full_name ? `Taller de ${user?.full_name}` : 'Taller Pro'));
 
       if (!targetShopId) {
         // Redirigir suavemente al registro si no hay taller configurado
         router.push('/GestionTecnicos/register?redirect=/GestionTecnicos/checkout');
+        return;
+      }
+
+      if (!targetEmail) {
+        setErrorMessage('Por favor, ingresa un correo electrónico válido para registrar los 14 días de prueba.');
+        setProcessingSubscription(false);
         return;
       }
 
@@ -255,7 +267,7 @@ function CheckoutContent() {
 
     try {
       const targetShopId = shop?.id || user?.shop_id || shopIdParam || user?.id;
-      const targetEmail = user?.email || shop?.owner_email || emailParam || '';
+      const targetEmail = (payerEmail || user?.email || shop?.owner_email || emailParam || '').trim().toLowerCase();
       const targetShopName = shop?.name || (nameParam ? decodeURIComponent(nameParam) : (user?.full_name ? `Taller de ${user?.full_name}` : 'Taller Pro'));
 
       if (!targetShopId) {
@@ -411,6 +423,24 @@ function CheckoutContent() {
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Cancelación libre sin penalidad
                   </div>
+                </div>
+
+                {/* Email de facturación / suscripción */}
+                <div className="pt-2 bg-surface-container-lowest/80 p-3 rounded-xl border border-outline-variant/60 space-y-1.5">
+                  <label className="block text-[10px] font-bold text-on-surface uppercase tracking-wider">
+                    Correo para la suscripción Mercado Pago:
+                  </label>
+                  <input
+                    type="email"
+                    value={payerEmail}
+                    onChange={(e) => setPayerEmail(e.target.value)}
+                    placeholder="email-de-pago@ejemplo.com"
+                    required
+                    className="w-full bg-surface-container border border-outline-variant rounded-lg py-2 px-3 text-xs font-mono text-on-surface focus:border-primary focus:outline-none"
+                  />
+                  <p className="text-[10px] text-on-surface-variant">
+                    💡 Si estás probando tu pasarela, asegúrate de ingresar un correo o tarjeta diferente a tu cuenta cobradora.
+                  </p>
                 </div>
               </div>
 

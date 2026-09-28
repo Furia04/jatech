@@ -36,8 +36,16 @@ export async function POST(request: Request) {
     const cleanShopName = shopName?.trim() || 'Taller de Servicio Técnico';
     const targetEmail = (email || '').trim().toLowerCase();
 
+    if (!targetEmail) {
+      return NextResponse.json(
+        { error: 'El correo electrónico es requerido por Mercado Pago para registrar los 14 días de prueba.' },
+        { status: 400 }
+      );
+    }
+
     // Payload de Suscripción Recurrente con 14 días de prueba gratuita en Mercado Pago (Preapproval)
     const subscriptionPayload: any = {
+      payer_email: targetEmail,
       reason: `Membresía JaTech — Plan Taller Pro (14 Días Gratis) - ${cleanShopName}`,
       auto_recurring: {
         frequency: 1,
@@ -53,12 +61,8 @@ export async function POST(request: Request) {
       external_reference: shopId,
     };
 
-    if (targetEmail) {
-      subscriptionPayload.payer_email = targetEmail;
-    }
-
-    // 1. Primer intento oficial a la API REST de Preapproval / Suscripciones de Mercado Pago
-    let mpRes = await fetch('https://api.mercadopago.com/preapproval', {
+    // Llamada oficial a la API REST de Preapproval / Suscripciones de Mercado Pago
+    const mpRes = await fetch('https://api.mercadopago.com/preapproval', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${mpAccessToken}`,
@@ -67,21 +71,7 @@ export async function POST(request: Request) {
       body: JSON.stringify(subscriptionPayload),
     });
 
-    let mpData = await mpRes.json();
-
-    // 2. Si falló y habíamos enviado payer_email (típico cuando el pagador es el mismo dueño de la cuenta de MP), reintentar sin payer_email
-    if ((!mpRes.ok || !mpData.init_point) && subscriptionPayload.payer_email) {
-      delete subscriptionPayload.payer_email;
-      mpRes = await fetch('https://api.mercadopago.com/preapproval', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${mpAccessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(subscriptionPayload),
-      });
-      mpData = await mpRes.json();
-    }
+    const mpData = await mpRes.json();
 
     if (!mpRes.ok || !mpData.init_point) {
       console.error('Error al crear suscripción en Mercado Pago API:', mpData);
@@ -96,8 +86,7 @@ export async function POST(request: Request) {
       ) {
         return NextResponse.json(
           {
-            error:
-              'Tu Access Token de Mercado Pago no cuenta con permisos para crear Suscripciones recurrentes (Preapproval) o estás probando con el mismo email dueño de la cuenta. Asegúrate de usar el Access Token de Producción (comienza con APP_USR-...) en Vercel, o utiliza la opción "Pagar 1 Mes de Contado" / Transferencia.',
+            error: `Mercado Pago no autorizó la operación con el email "${targetEmail}". Esto ocurre si ese email es el mismo de tu cuenta dueña de Mercado Pago (no permite auto-suscripción) o si la aplicación no completó la activación de negocio en el Panel de Developers de MP.`,
           },
           { status: mpRes.status || 401 }
         );
