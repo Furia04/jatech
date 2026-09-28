@@ -43,10 +43,13 @@ export async function POST(request: Request) {
       );
     }
 
+    // Limitar reason a un máximo estricto de 50 caracteres (Mercado Pago /preapproval exige <= 60 caracteres)
+    const subscriptionReason = `JaTech Pro - 14 Días Gratis (${cleanShopName})`.slice(0, 50);
+
     // Payload de Suscripción Recurrente con 14 días de prueba gratuita en Mercado Pago (Preapproval)
     const subscriptionPayload: any = {
       payer_email: targetEmail,
-      reason: `Membresía JaTech — Plan Taller Pro (14 Días Gratis) - ${cleanShopName}`,
+      reason: subscriptionReason,
       auto_recurring: {
         frequency: 1,
         frequency_type: 'months',
