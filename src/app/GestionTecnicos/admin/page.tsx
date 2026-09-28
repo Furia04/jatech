@@ -148,6 +148,19 @@ export default function SuperAdminDashboardPage() {
     }
   };
 
+  const handleActivateTrial = async (shop: Shop) => {
+    setActionLoadingId(shop.id);
+    try {
+      const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      await updateShopSubscriptionStatus(shop.id, 'trialing', true, trialEndsAt);
+      await loadShops();
+    } catch (err) {
+      console.error('Error al activar prueba de 14 días en Supabase:', err);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   const handleManualAddShop = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newShopName.trim() || !newOwnerEmail.trim()) return;
@@ -448,22 +461,34 @@ export default function SuperAdminDashboardPage() {
                           )}
                         </button>
                       </td>
-                      <td className="p-4 text-right space-x-2">
+                      <td className="p-4 text-right space-x-1.5 whitespace-nowrap">
+                        {shop.subscription_status !== 'trialing' && (
+                          <button
+                            disabled={actionLoadingId === shop.id}
+                            onClick={() => handleActivateTrial(shop)}
+                            className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-bold px-2.5 py-1 rounded-lg text-[11px] shadow-sm transition-colors disabled:opacity-50 inline-flex items-center gap-1"
+                            title="Activar período de prueba manual de 14 días"
+                          >
+                            <Gift className="w-3 h-3 text-purple-400" />
+                            {actionLoadingId === shop.id ? '...' : 'Activar 14 Días'}
+                          </button>
+                        )}
+
                         {!shop.active || shop.subscription_status !== 'active' ? (
                           <button
                             disabled={actionLoadingId === shop.id}
                             onClick={() => handleMarkAsPaid(shop)}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1 rounded-lg text-[11px] shadow-sm transition-colors disabled:opacity-50"
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-2.5 py-1 rounded-lg text-[11px] shadow-sm transition-colors disabled:opacity-50 inline-flex items-center gap-1"
                           >
-                            {actionLoadingId === shop.id ? 'Guardando...' : '✓ Aprobar Pago & Activar'}
+                            {actionLoadingId === shop.id ? '...' : '✓ Aprobar Pago'}
                           </button>
                         ) : (
                           <button
                             disabled={actionLoadingId === shop.id}
                             onClick={() => handleToggleActiveStatus(shop)}
-                            className="bg-error/20 hover:bg-error/30 text-error font-bold px-3 py-1 rounded-lg text-[11px] transition-colors disabled:opacity-50"
+                            className="bg-error/20 hover:bg-error/30 text-error font-bold px-2.5 py-1 rounded-lg text-[11px] transition-colors disabled:opacity-50"
                           >
-                            {actionLoadingId === shop.id ? 'Guardando...' : 'Suspender Taller'}
+                            {actionLoadingId === shop.id ? '...' : 'Suspender'}
                           </button>
                         )}
 

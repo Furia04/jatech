@@ -414,7 +414,7 @@ function CheckoutContent() {
                   <Gift className="w-5 h-5 text-primary" /> 14 Días de Prueba Gratis con Tarjeta
                 </div>
                 <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
-                  Registra tu tarjeta de débito o crédito para validar tu cuenta. <strong className="text-on-surface font-semibold">$0 cobrados hoy</strong>. Tu primer cobro de <strong>$20.000 ARS</strong> será el día 14. Puedes cancelar en cualquier momento con 1 click.
+                  Registra tu tarjeta de débito o crédito para validar tu cuenta. <strong className="text-on-surface font-semibold">$0 cobrados hoy</strong>. Tu primer cobro de <strong>$20.000 ARS</strong> será recién el día 14. Puedes cancelar en cualquier momento con 1 solo click.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-[11px] text-on-surface/90">
                   <div className="flex items-center gap-1.5">
@@ -425,8 +425,12 @@ function CheckoutContent() {
                   </div>
                 </div>
 
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-2 text-[11px] text-on-surface-variant">
+                  💳 <strong>Requisito de Mercado Pago:</strong> Para suscripciones con prueba gratis, Mercado Pago solicita tarjeta de débito o crédito. <em>No permite dinero en cuenta para pruebas automáticas.</em>
+                </div>
+
                 {/* Email de facturación / suscripción */}
-                <div className="pt-2 bg-surface-container-lowest/80 p-3 rounded-xl border border-outline-variant/60 space-y-1.5">
+                <div className="pt-1 bg-surface-container-lowest/80 p-3 rounded-xl border border-outline-variant/60 space-y-1.5">
                   <label className="block text-[10px] font-bold text-on-surface uppercase tracking-wider">
                     Correo para la suscripción Mercado Pago:
                   </label>
@@ -471,7 +475,7 @@ function CheckoutContent() {
                     <Building2 className="w-4 h-4" /> Transferencia Alias / CBU
                   </div>
                   <p className="font-body-sm text-[11px] text-on-surface-variant">
-                    Paga el mes de $20.000 por transferencia y te activamos manualmente.
+                    Paga el mes de $20.000 por transferencia bancaria o Mercado Pago y te activamos manualmente.
                   </p>
                   <div className="bg-surface-container p-2.5 rounded-xl border border-outline-variant/40 space-y-0.5 font-mono-data text-xs">
                     <div className="text-on-surface-variant text-[9px] uppercase font-bold">Alias MercadoPago / CBU:</div>
@@ -501,15 +505,18 @@ function CheckoutContent() {
                 </button>
               </div>
 
-              {/* Opción C: Pago Directo 1 Mes Mercado Pago */}
+              {/* Opción C: Pago Directo 1 Mes Mercado Pago (Acepta Dinero en Cuenta) */}
               <div className="bg-surface-container-lowest border border-outline-variant/80 rounded-2xl p-5 space-y-3 flex flex-col justify-between">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-emerald-400 font-title-sm text-xs font-bold">
                     <CreditCard className="w-4 h-4" /> Pagar 1 Mes de Contado
                   </div>
                   <p className="font-body-sm text-[11px] text-on-surface-variant">
-                    Abona directamente $20.000 ARS por 1 mes con dinero en cuenta, débito o crédito.
+                    Paga $20.000 ARS usando <strong>Dinero en cuenta de Mercado Pago</strong>, tarjeta de débito o crédito directo.
                   </p>
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-1.5 text-[10px] text-emerald-300">
+                    ✓ Acepta saldo disponible en cuenta MP
+                  </div>
                 </div>
 
                 <button
@@ -531,17 +538,18 @@ function CheckoutContent() {
               </div>
             </div>
 
-            {/* Asistencia por WhatsApp */}
-            <div className="text-center pt-2 border-t border-outline-variant/40">
+            {/* BOTÓN DESTACADO: CONTACTAR A JATECH POR WHATSAPP */}
+            <div className="pt-3 border-t border-outline-variant/40">
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(
-                  `Hola, necesito asistencia con la activación de la membresía para el taller ${shop?.name || user?.email || ''} en JaTech.`
+                href={`https://wa.me/5492646211278?text=${encodeURIComponent(
+                  `Hola JaTech, necesito soporte/asistencia para la activación del taller "${shop?.name || user?.full_name || 'Mi Taller'}" (Email: ${payerEmail || user?.email || ''}).`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-xs font-title-sm text-on-surface-variant hover:text-emerald-400 font-semibold transition-colors"
+                className="w-full bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/40 text-emerald-300 font-title-sm text-xs font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2.5 text-center group shadow-sm"
               >
-                <MessageSquare className="w-4 h-4 text-emerald-400" /> ¿Preguntas o asistencia con tu pago? Contactar por WhatsApp
+                <MessageSquare className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform shrink-0" />
+                <span>¿Dudas o necesitas activación manual? Contactar a JaTech por WhatsApp</span>
               </a>
             </div>
           </div>

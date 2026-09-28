@@ -209,8 +209,9 @@ export async function fetchAllShopsForAdmin(): Promise<Shop[]> {
 
 export async function updateShopSubscriptionStatus(
   shopId: string,
-  status: 'active' | 'pending_payment' | 'past_due' | 'canceled',
-  active: boolean
+  status: 'active' | 'pending_payment' | 'past_due' | 'canceled' | 'trialing',
+  active: boolean,
+  trialEndsAt?: string
 ) {
   try {
     if (typeof window !== 'undefined') {
@@ -218,7 +219,7 @@ export async function updateShopSubscriptionStatus(
         const res = await fetch('/api/admin/shops/status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ shopId, status, active }),
+          body: JSON.stringify({ shopId, status, active, trialEndsAt }),
         });
         if (res.ok) {
           return true;
@@ -228,13 +229,19 @@ export async function updateShopSubscriptionStatus(
       }
     }
 
+    const updatePayload: any = {
+      subscription_status: status,
+      active: active,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (status === 'trialing' || trialEndsAt) {
+      updatePayload.trial_ends_at = trialEndsAt || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    }
+
     const { error } = await supabase
       .from('shops')
-      .update({
-        subscription_status: status,
-        active: active,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq('id', shopId);
 
     if (error) {
@@ -252,6 +259,7 @@ export async function updateShopSubscriptionStatus(
           subscription_status: status,
           plan_price: 20000,
           active: active,
+          ...(updatePayload.trial_ends_at ? { trial_ends_at: updatePayload.trial_ends_at } : {}),
         }]);
       }
     }

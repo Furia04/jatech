@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { shopId, status, active } = body;
+    const { shopId, status, active, trialEndsAt } = body;
 
     if (!shopId) {
       return NextResponse.json({ error: 'Falta shopId' }, { status: 400 });
@@ -29,14 +29,20 @@ export async function POST(request: Request) {
     const isActive = Boolean(active);
     const subscriptionStatus = status || (isActive ? 'active' : 'canceled');
 
+    const updateFields: any = {
+      subscription_status: subscriptionStatus,
+      active: isActive,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (subscriptionStatus === 'trialing' || trialEndsAt) {
+      updateFields.trial_ends_at = trialEndsAt || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    }
+
     // 1. Intentar actualizar directamente en shops por id
     const { data: updatedShops, error: updateErr } = await supabaseAdmin
       .from('shops')
-      .update({
-        subscription_status: subscriptionStatus,
-        active: isActive,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateFields)
       .eq('id', shopId)
       .select();
 
@@ -58,6 +64,7 @@ export async function POST(request: Request) {
         active: isActive,
         plan_price: 20000,
         updated_at: new Date().toISOString(),
+        ...(updateFields.trial_ends_at ? { trial_ends_at: updateFields.trial_ends_at } : {}),
       };
 
       if (userProfile) {
