@@ -43,8 +43,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Limitar reason a un máximo estricto de 50 caracteres (Mercado Pago /preapproval exige <= 60 caracteres)
-    const subscriptionReason = `JaTech Pro - 14 Días Gratis (${cleanShopName})`.slice(0, 50);
+    // Título claro y conciso para la pantalla de suscripción de Mercado Pago (<= 60 caracteres)
+    const subscriptionReason = 'JaTech Pro: 14 Días Gratis ($0 hoy)';
 
     // Payload de Suscripción Recurrente con 14 días de prueba gratuita en Mercado Pago (Preapproval)
     const subscriptionPayload: any = {
