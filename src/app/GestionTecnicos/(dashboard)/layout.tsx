@@ -57,15 +57,34 @@ export default function DashboardLayout({
         .maybeSingle();
 
       if (dbShop) {
+        const isPending = dbShop.subscription_status === 'pending_payment' || !dbShop.subscription_status;
+        const effectiveStatus = isPending ? 'trialing' : dbShop.subscription_status;
+        const effectiveActive = isPending ? true : (dbShop.active ?? true);
+        const effectiveTrialEndsAt = dbShop.trial_ends_at || (effectiveStatus === 'trialing' ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() : undefined);
+
+        // Auto-activar prueba de 14 días si estaba pendiente
+        if (isPending && dbShop.id) {
+          try {
+            await supabase
+              .from('shops')
+              .update({
+                subscription_status: 'trialing',
+                active: true,
+                trial_ends_at: effectiveTrialEndsAt,
+              })
+              .eq('id', dbShop.id);
+          } catch (e) {}
+        }
+
         setUserShop({
           id: dbShop.id,
           name: dbShop.name || 'Mi Taller',
           owner_email: dbShop.owner_email || profile.email,
-          subscription_status: dbShop.subscription_status || 'trialing',
+          subscription_status: effectiveStatus,
           plan_price: Number(dbShop.plan_price) || 20000,
-          active: dbShop.active ?? true,
+          active: effectiveActive,
           mp_preapproval_id: dbShop.mp_preapproval_id,
-          trial_ends_at: dbShop.trial_ends_at || (dbShop.subscription_status === 'trialing' ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() : undefined),
+          trial_ends_at: effectiveTrialEndsAt,
           created_at: dbShop.created_at || new Date().toISOString(),
         });
       } else {
@@ -92,18 +111,20 @@ export default function DashboardLayout({
     loadUserAndShopStatus();
   }, []);
 
+  const isSuperAdmin =
+    userProfile?.role === 'superadmin' ||
+    userProfile?.email === 'furiaortiz04@gmail.com' ||
+    (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && userProfile?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL);
+
   const isTrialing = userShop?.subscription_status === 'trialing';
   const trialDaysRemaining = userShop?.trial_ends_at
     ? Math.max(0, Math.ceil((new Date(userShop.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 14;
   const isTrialExpired = isTrialing && trialDaysRemaining <= 0;
 
-  const isSuspended = userShop
+  // Superadmin NUNCA es suspendido. Talleres solo si están cancelados/vencidos
+  const isSuspended = !isSuperAdmin && userShop
     ? (userShop.active === false && (userShop.subscription_status === 'canceled' || userShop.subscription_status === 'past_due')) || isTrialExpired
-    : false;
-
-  const isPendingPayment = userShop
-    ? (userShop.active === false && userShop.subscription_status === 'pending_payment')
     : false;
 
   if (loading || !userProfile) {
@@ -238,61 +259,6 @@ export default function DashboardLayout({
                 >
                   <MessageSquare className="w-3.5 h-3.5 text-emerald-400" /> ¿Pagaste por transferencia? Notificar por WhatsApp
                 </a>
-              </div>
-            </div>
-          ) : isPendingPayment ? (
-            /* CASO 2: PANTALLA DE PRIMER PAGO O PRUEBA PARA USUARIO NUEVO */
-            <div className="max-w-2xl mx-auto my-8 bg-surface-container border-2 border-primary/40 rounded-3xl p-8 shadow-2xl space-y-6 text-center animate-in zoom-in-95 duration-200">
-              <div className="w-16 h-16 rounded-2xl bg-primary/20 text-primary flex items-center justify-center mx-auto border border-primary/30 shadow-inner">
-                <Gift className="w-8 h-8" />
-              </div>
-
-              <div className="space-y-2">
-                <span className="font-label-caps text-xs text-primary font-bold uppercase tracking-widest">
-                  Comienza tu Prueba de 14 Días
-                </span>
-                <h2 className="font-display-lg text-2xl sm:text-3xl font-bold text-on-surface">
-                  ¡Bienvenido a JaTech Pro!
-                </h2>
-                <p className="font-body-md text-xs sm:text-sm text-on-surface-variant max-w-md mx-auto">
-                  Disfruta de 14 días sin cargo para probar el sistema de órdenes de servicio, comanda de 80mm e inventario. Solo requieres registrar tu tarjeta ($0 cobrados hoy).
-                </p>
-              </div>
-
-              <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/60 text-left space-y-3 font-mono-data text-xs">
-                <div className="text-on-surface-variant text-[10px] uppercase font-bold">O activa mediante Transferencia Bancaria:</div>
-                <div className="flex justify-between items-center bg-surface-container p-3 rounded-xl border border-outline-variant/40">
-                  <div>
-                    <div className="text-on-surface font-bold text-sm">JATECH.OPS.MP</div>
-                    <div className="text-on-surface-variant text-[10px]">MercadoPago / CBU • $20.000 ARS</div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText('JATECH.OPS.MP');
-                      setCopiedAlias(true);
-                      setTimeout(() => setCopiedAlias(false), 2000);
-                    }}
-                    className="px-3 py-1.5 bg-surface-bright text-on-surface border border-outline-variant rounded-lg hover:bg-surface-container-highest text-[11px] font-bold flex items-center gap-1"
-                  >
-                    {copiedAlias ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-primary" />}
-                    {copiedAlias ? 'Copiado' : 'Copiar'}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <Link
-                  href="/GestionTecnicos/checkout"
-                  className="flex-1 bg-primary text-on-primary hover:bg-primary-container font-title-sm text-xs font-bold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
-                >
-                  <Zap className="w-4 h-4" /> Iniciar 14 Días Gratis ($0 Hoy)
-                </Link>
-                <button
-                  onClick={loadUserAndShopStatus}
-                  className="flex-1 bg-surface-container-high border border-outline-variant hover:bg-surface-container-highest text-on-surface font-title-sm text-xs font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2"
-                >
-                  <RefreshCw className="w-4 h-4 text-primary" /> Ya pagué, verificar
-                </button>
               </div>
             </div>
           ) : (
