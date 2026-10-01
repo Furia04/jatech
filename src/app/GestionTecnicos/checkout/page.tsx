@@ -260,6 +260,40 @@ function CheckoutContent() {
     }
   };
 
+  // Opción 1.B: Activar 14 días de prueba inmediata con 1 click
+  const handleInstantTrial = async () => {
+    setProcessingSubscription(true);
+    setErrorMessage('');
+    try {
+      const targetShopId = shop?.id || user?.shop_id || shopIdParam || user?.id;
+      const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
+      if (targetShopId) {
+        await supabase
+          .from('shops')
+          .update({
+            subscription_status: 'trialing',
+            active: true,
+            trial_ends_at: trialEndsAt,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', targetShopId);
+      }
+
+      setIsTrialSuccess(true);
+      setPaymentSuccess(true);
+      setTimeout(() => {
+        router.push('/GestionTecnicos/dashboard');
+        router.refresh();
+      }, 1500);
+    } catch (err: any) {
+      console.error('Error al activar prueba instantánea:', err);
+      router.push('/GestionTecnicos/dashboard');
+    } finally {
+      setProcessingSubscription(false);
+    }
+  };
+
   // Opción 2: Pagar mes de contado con Mercado Pago
   const handlePayDirect = async () => {
     setProcessingDirectPayment(true);
@@ -448,22 +482,34 @@ function CheckoutContent() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleStartFreeTrial}
-                disabled={processingSubscription || processingDirectPayment}
-                className="w-full bg-primary hover:bg-primary/90 text-on-primary font-title-sm text-sm font-bold py-3.5 rounded-xl transition-all shadow-lg hover:shadow-primary/25 flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {processingSubscription ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Conectando Mercado Pago...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-4 h-4" /> Comenzar 14 Días de Prueba Gratis ($0 Hoy)
-                  </>
-                )}
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={handleStartFreeTrial}
+                  disabled={processingSubscription || processingDirectPayment}
+                  className="flex-1 bg-primary hover:bg-primary/90 text-on-primary font-title-sm text-xs sm:text-sm font-bold py-3.5 rounded-xl transition-all shadow-lg hover:shadow-primary/25 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {processingSubscription ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Conectando...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4" /> Iniciar Prueba con Tarjeta ($0 Hoy)
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleInstantTrial}
+                  disabled={processingSubscription || processingDirectPayment}
+                  className="bg-surface-bright border border-primary/40 hover:bg-surface-container-highest text-primary font-title-sm text-xs sm:text-sm font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5"
+                  title="Activar 14 días de prueba inmediatamente para explorar el sistema"
+                >
+                  <Gift className="w-4 h-4 text-primary" /> Activar 14 Días Ya (1-Click)
+                </button>
+              </div>
             </div>
 
             {/* OPCIÓN 2 Y 3: TRANSFERENCIA CBU O PAGO DIRECTO */}
