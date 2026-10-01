@@ -61,21 +61,23 @@ export default function DashboardLayout({
           id: dbShop.id,
           name: dbShop.name || 'Mi Taller',
           owner_email: dbShop.owner_email || profile.email,
-          subscription_status: dbShop.subscription_status || 'pending_payment',
+          subscription_status: dbShop.subscription_status || 'trialing',
           plan_price: Number(dbShop.plan_price) || 20000,
-          active: dbShop.active ?? false,
+          active: dbShop.active ?? true,
           mp_preapproval_id: dbShop.mp_preapproval_id,
-          trial_ends_at: dbShop.trial_ends_at,
+          trial_ends_at: dbShop.trial_ends_at || (dbShop.subscription_status === 'trialing' ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() : undefined),
           created_at: dbShop.created_at || new Date().toISOString(),
         });
       } else {
+        const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
         setUserShop({
           id: shopId,
           name: profile.full_name ? `Taller de ${profile.full_name}` : 'Mi Taller',
           owner_email: profile.email,
-          subscription_status: 'pending_payment',
+          subscription_status: 'trialing',
           plan_price: 20000,
-          active: false,
+          active: true,
+          trial_ends_at: trialEndsAt,
           created_at: new Date().toISOString(),
         });
       }

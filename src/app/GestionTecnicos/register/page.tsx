@@ -46,12 +46,15 @@ function RegisterForm() {
     try {
       const cleanEmail = email.trim().toLowerCase();
       const cleanShopName = shopName.trim();
+      const siteUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || 'https://jatech.com.ar');
+      const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
-      // 1. Registrar usuario en Supabase Auth
+      // 1. Registrar usuario en Supabase Auth con redirect explícito
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
         password,
         options: {
+          emailRedirectTo: `${siteUrl}/GestionTecnicos/auth/callback`,
           data: {
             full_name: fullName,
             shop_name: cleanShopName,
@@ -73,21 +76,22 @@ function RegisterForm() {
           password,
         });
       } catch (loginErr) {
-        // En caso de que requiera confirmación de email, continuará con los parámetros URL
+        // En caso de que requiera confirmación de email, continuará
       }
 
       const userId = authData?.user?.id;
       const generatedShopId = userId || `shop-${Date.now()}`;
 
-      // 2. Insertar o actualizar Taller en la tabla 'shops' de Supabase
+      // 2. Insertar o actualizar Taller en la tabla 'shops' de Supabase (con 14 días de prueba activados)
       try {
         await supabase.from('shops').upsert([{
           id: generatedShopId,
           name: cleanShopName,
           owner_email: cleanEmail,
-          subscription_status: 'pending_payment',
+          subscription_status: 'trialing',
+          trial_ends_at: trialEndsAt,
           plan_price: 20000,
-          active: false,
+          active: true,
         }], { onConflict: 'id' });
       } catch (err) {
         console.warn('Error al insertar taller en Supabase:', err);
@@ -114,9 +118,10 @@ function RegisterForm() {
         id: generatedShopId,
         name: cleanShopName,
         owner_email: cleanEmail,
-        subscription_status: 'pending_payment',
+        subscription_status: 'trialing',
+        trial_ends_at: trialEndsAt,
         plan_price: 20000,
-        active: false,
+        active: true,
         created_at: new Date().toISOString(),
         orders_count: 0,
       };
@@ -139,8 +144,7 @@ function RegisterForm() {
         }
       }
 
-      const checkoutUrl = `/GestionTecnicos/checkout?shop_id=${encodeURIComponent(generatedShopId)}&email=${encodeURIComponent(cleanEmail)}&name=${encodeURIComponent(cleanShopName)}`;
-      const targetDestination = redirectParam && redirectParam.startsWith('/') ? redirectParam : checkoutUrl;
+      const targetDestination = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/GestionTecnicos/dashboard';
 
       setSuccessMessage('¡Taller registrado exitosamente! Redirigiendo al checkout...');
       setTimeout(() => {

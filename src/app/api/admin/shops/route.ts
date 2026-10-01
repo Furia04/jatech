@@ -112,11 +112,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nombre y email son requeridos' }, { status: 400 });
     }
 
+    const cleanEmail = owner_email.trim().toLowerCase();
+    const cleanName = name.trim();
+
     const { data, error } = await supabaseAdmin
       .from('shops')
       .insert([{
-        name: name.trim(),
-        owner_email: owner_email.trim().toLowerCase(),
+        name: cleanName,
+        owner_email: cleanEmail,
         subscription_status: subscription_status || 'active',
         plan_price: Number(plan_price) || 20000,
         active: active ?? true,
@@ -126,6 +129,16 @@ export async function POST(request: Request) {
 
     if (error) {
       throw error;
+    }
+
+    // Vincular usuarios que ya existan con este correo
+    try {
+      await supabaseAdmin
+        .from('users')
+        .update({ shop_id: data.id })
+        .eq('email', cleanEmail);
+    } catch (uErr) {
+      console.warn('Advertencia al vincular usuario a nuevo taller:', uErr);
     }
 
     return NextResponse.json({ success: true, shop: data });

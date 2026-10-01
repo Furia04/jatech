@@ -13,7 +13,7 @@ export async function getCurrentUserProfile(): Promise<UserProfile | null> {
     const cleanEmail = (user.email || '').toLowerCase().trim();
 
     // 1. Intentar consultar el perfil de la tabla 'users'
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('users')
       .select('*')
       .eq('id', user.id)
@@ -35,6 +35,19 @@ export async function getCurrentUserProfile(): Promise<UserProfile | null> {
         resolvedShopId = shopByEmail.id;
       } else {
         resolvedShopId = user.id;
+        // Auto-crear taller si no existía ninguno
+        try {
+          const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+          await supabase.from('shops').insert([{
+            id: user.id,
+            name: user.user_metadata?.shop_name || (resolvedFullName ? `Taller de ${resolvedFullName}` : 'Mi Taller'),
+            owner_email: cleanEmail,
+            subscription_status: 'trialing',
+            trial_ends_at: trialEndsAt,
+            plan_price: 20000,
+            active: true,
+          }]);
+        } catch (e) {}
       }
     }
 
@@ -84,25 +97,35 @@ export async function fetchCurrentShop(): Promise<Shop | null> {
       .maybeSingle();
 
     if (!dbShop) {
-      return {
+      const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      const defaultShop: Shop = {
         id: targetShopId,
         name: profile.full_name ? `Taller de ${profile.full_name}` : 'Mi Taller',
         owner_email: profile.email,
-        subscription_status: 'active',
+        subscription_status: 'trialing',
+        trial_ends_at: trialEndsAt,
+        plan_price: 20000,
+        active: true,
         created_at: new Date().toISOString(),
         settings: {},
       };
+
+      try {
+        await supabase.from('shops').insert([defaultShop]);
+      } catch (e) {}
+
+      return defaultShop;
     }
 
     return {
       id: dbShop.id,
       name: dbShop.name || 'Mi Taller',
       owner_email: dbShop.owner_email || profile.email,
-      subscription_status: dbShop.subscription_status || 'active',
+      subscription_status: dbShop.subscription_status || 'trialing',
       plan_price: Number(dbShop.plan_price) || 20000,
       active: dbShop.active ?? true,
       mp_preapproval_id: dbShop.mp_preapproval_id,
-      trial_ends_at: dbShop.trial_ends_at,
+      trial_ends_at: dbShop.trial_ends_at || (dbShop.subscription_status === 'trialing' ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() : undefined),
       created_at: dbShop.created_at,
       settings: dbShop.settings || {},
     };
