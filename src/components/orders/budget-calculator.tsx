@@ -22,6 +22,8 @@ import { InventoryItem, OrderSpare, ServiceOrder, UserProfile } from '@/types';
 import {
   fetchOrderSpares,
   assignSpareToOrder,
+  assignCustomSpareToOrder,
+  updateOrderSpareQuantity,
   returnSpareToInventory,
 } from '@/lib/supabase/services';
 
@@ -78,8 +80,8 @@ export function BudgetCalculator({
           .map((s) => ({
             id: s.id,
             spare_id: s.id,
-            inventory_item_id: s.inventory_item_id,
-            description: `${s.name} ${s.sku ? `(${s.sku})` : ''}`,
+            inventory_item_id: s.inventory_item_id || undefined,
+            description: `${s.name} ${s.sku && s.sku !== 'PERSONALIZADO' ? `(${s.sku})` : ''}`.trim(),
             unit_cost: Number(s.unit_cost) || 0,
             unit_price: Number(s.unit_price) || 0,
             quantity: s.quantity || 1,
@@ -166,13 +168,42 @@ export function BudgetCalculator({
     }
   };
 
-  const handleAddCustomItem = () => {
+  const handleAddCustomItem = async () => {
     const desc = prompt('Descripción del repuesto o insumo personalizado:');
-    if (!desc) return;
+    if (!desc || !desc.trim()) return;
     const priceStr = prompt('Precio de venta al público ($ ARS):', '15000');
     if (!priceStr) return;
 
     const price = parseFloat(priceStr) || 0;
+
+    if (order?.id) {
+      try {
+        const assigned = await assignCustomSpareToOrder({
+          order_id: order.id,
+          device_id: order.device_id,
+          name: desc.trim(),
+          unit_cost: price * 0.5,
+          unit_price: price,
+          quantity: 1,
+        });
+
+        if (assigned) {
+          const newItem: BudgetItem = {
+            id: assigned.id,
+            spare_id: assigned.id,
+            description: assigned.name,
+            unit_cost: assigned.unit_cost,
+            unit_price: assigned.unit_price,
+            quantity: assigned.quantity,
+            status: assigned.status as any,
+          };
+          setItems((prev) => [...prev, newItem]);
+          return;
+        }
+      } catch (err) {
+        console.error('Error al registrar repuesto personalizado:', err);
+      }
+    }
 
     const newItem: BudgetItem = {
       id: `b_${Date.now()}`,
@@ -187,9 +218,9 @@ export function BudgetCalculator({
   };
 
   const handleRemoveItem = async (targetItem: BudgetItem) => {
-    if (targetItem.spare_id) {
+    if (targetItem.spare_id && order?.id) {
       try {
-        await returnSpareToInventory(targetItem.spare_id);
+        await returnSpareToInventory(targetItem.spare_id, order.id);
       } catch (err) {
         console.error('Error al devolver repuesto a inventario:', err);
       }
@@ -197,12 +228,18 @@ export function BudgetCalculator({
     setItems((prev) => prev.filter((i) => i.id !== targetItem.id));
   };
 
-  const handleQuantityChange = (itemId: string, qty: number) => {
+  const handleQuantityChange = async (itemId: string, qty: number) => {
+    const validQty = Math.max(1, qty);
     setItems((prev) =>
       prev.map((i) =>
-        i.id === itemId ? { ...i, quantity: Math.max(1, qty) } : i
+        i.id === itemId ? { ...i, quantity: validQty } : i
       )
     );
+    if (order?.id) {
+      try {
+        await updateOrderSpareQuantity(itemId, order.id, validQty);
+      } catch (e) {}
+    }
   };
 
   const handleSave = () => {

@@ -824,6 +824,38 @@ export async function fetchCustomers(): Promise<Customer[]> {
 // INVENTARIO (MULTI-TENANT REAL)
 // =======================================================
 
+function getLocalConditionMap(): Record<string, { condition: 'nuevo' | 'usado'; condition_grade?: string; source_notes?: string }> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const saved = localStorage.getItem('jatech_inventory_conditions');
+    return saved ? JSON.parse(saved) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveLocalCondition(itemId: string, data: { condition?: 'nuevo' | 'usado'; condition_grade?: string; source_notes?: string }) {
+  if (typeof window === 'undefined') return;
+  try {
+    const existing = getLocalConditionMap();
+    existing[itemId] = {
+      condition: data.condition || 'nuevo',
+      condition_grade: data.condition_grade,
+      source_notes: data.source_notes,
+    };
+    localStorage.setItem('jatech_inventory_conditions', JSON.stringify(existing));
+  } catch (e) {}
+}
+
+function removeLocalCondition(itemId: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    const existing = getLocalConditionMap();
+    delete existing[itemId];
+    localStorage.setItem('jatech_inventory_conditions', JSON.stringify(existing));
+  } catch (e) {}
+}
+
 export async function fetchInventory(): Promise<InventoryItem[]> {
   try {
     const profile = await getCurrentUserProfile();
@@ -836,8 +868,24 @@ export async function fetchInventory(): Promise<InventoryItem[]> {
       .eq('shop_id', shopId)
       .order('name', { ascending: true });
 
-    if (error) return [];
-    return data || [];
+    if (error || !data) return [];
+
+    const conditionMap = getLocalConditionMap();
+
+    return data.map((item: any) => {
+      const localMeta = conditionMap[item.id];
+      const isUsadoFromCategory = item.category?.includes('[USADO]') || item.sku?.toUpperCase().startsWith('DES-') || item.sku?.toUpperCase().startsWith('USD-');
+      const resolvedCondition: 'nuevo' | 'usado' = item.condition || localMeta?.condition || (isUsadoFromCategory ? 'usado' : 'nuevo');
+      const resolvedGrade = item.condition_grade || localMeta?.condition_grade;
+      const resolvedNotes = item.source_notes || localMeta?.source_notes;
+
+      return {
+        ...item,
+        condition: resolvedCondition,
+        condition_grade: resolvedGrade,
+        source_notes: resolvedNotes,
+      };
+    });
   } catch (err) {
     return [];
   }
@@ -1111,10 +1159,29 @@ export async function createInventoryItem(itemData: {
         .select()
         .single();
       if (fallbackError) throw fallbackError;
-      return { ...fallbackData, condition: itemData.condition || 'nuevo' };
+
+      saveLocalCondition(fallbackData.id, {
+        condition: itemData.condition || 'nuevo',
+        condition_grade: itemData.condition_grade,
+        source_notes: itemData.source_notes,
+      });
+
+      return {
+        ...fallbackData,
+        condition: itemData.condition || 'nuevo',
+        condition_grade: itemData.condition_grade,
+        source_notes: itemData.source_notes,
+      };
     }
     throw error;
   }
+
+  saveLocalCondition(data.id, {
+    condition: itemData.condition || 'nuevo',
+    condition_grade: itemData.condition_grade,
+    source_notes: itemData.source_notes,
+  });
+
   return data;
 }
 
@@ -1149,6 +1216,12 @@ export async function updateInventoryItem(
   if (itemData.condition_grade !== undefined) updatePayload.condition_grade = itemData.condition_grade;
   if (itemData.source_notes !== undefined) updatePayload.source_notes = itemData.source_notes;
 
+  saveLocalCondition(itemId, {
+    condition: itemData.condition,
+    condition_grade: itemData.condition_grade,
+    source_notes: itemData.source_notes,
+  });
+
   let query = supabase.from('inventory').update(updatePayload).eq('id', itemId);
   if (shopId && profile?.role !== 'superadmin') {
     query = query.eq('shop_id', shopId);
@@ -1166,7 +1239,12 @@ export async function updateInventoryItem(
       }
       const { data: retryData, error: retryError } = await retryQuery.select().single();
       if (retryError) throw retryError;
-      return { ...retryData, condition: itemData.condition || 'nuevo' };
+      return {
+        ...retryData,
+        condition: itemData.condition || 'nuevo',
+        condition_grade: itemData.condition_grade,
+        source_notes: itemData.source_notes,
+      };
     }
     throw error;
   }
@@ -1187,6 +1265,7 @@ export async function updateInventoryStock(itemId: string, newStock: number): Pr
 }
 
 export async function deleteInventoryItem(itemId: string): Promise<boolean> {
+  removeLocalCondition(itemId);
   try {
     const { error } = await supabase
       .from('inventory')
@@ -1385,11 +1464,32 @@ export async function fetchDeviceHistory(deviceId: string): Promise<{
 // GESTIÓN DE REPUESTOS EN CUSTODIA (ORDER_SPARES)
 // =======================================================
 
+function getLocalOrderSpares(orderId: string): OrderSpare[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const key = `jatech_order_spares_${orderId}`;
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveLocalOrderSpares(orderId: string, spares: OrderSpare[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    const key = `jatech_order_spares_${orderId}`;
+    localStorage.setItem(key, JSON.stringify(spares));
+  } catch (e) {}
+}
+
 export async function fetchOrderSpares(orderId: string): Promise<OrderSpare[]> {
   try {
     const profile = await getCurrentUserProfile();
     const shopId = profile?.shop_id || profile?.id;
-    if (!shopId || !orderId) return [];
+    const localSpares = getLocalOrderSpares(orderId);
+
+    if (!shopId || !orderId) return localSpares;
 
     const { data, error } = await supabase
       .from('order_spares')
@@ -1398,10 +1498,19 @@ export async function fetchOrderSpares(orderId: string): Promise<OrderSpare[]> {
       .eq('order_id', orderId)
       .order('created_at', { ascending: true });
 
-    if (error || !data) return [];
-    return data;
+    if (error || !data || data.length === 0) {
+      return localSpares;
+    }
+
+    // Unir registros de Supabase con los locales para asegurar que no se pierdan repuestos personalizados
+    const dbIds = new Set(data.map((d: any) => d.id));
+    const extraLocal = localSpares.filter((l) => !dbIds.has(l.id) && l.status !== 'returned');
+    const combined = [...data, ...extraLocal];
+
+    saveLocalOrderSpares(orderId, combined);
+    return combined;
   } catch (err) {
-    return [];
+    return getLocalOrderSpares(orderId);
   }
 }
 
@@ -1411,59 +1520,154 @@ export async function assignSpareToOrder(payload: {
   inventory_item_id: string;
   quantity?: number;
 }): Promise<OrderSpare | null> {
+  const profile = await getCurrentUserProfile();
+  const shopId = profile?.shop_id || profile?.id;
+  const qty = payload.quantity || 1;
+
+  let invItem: any = null;
   try {
-    const profile = await getCurrentUserProfile();
-    const shopId = profile?.shop_id || profile?.id;
-    if (!shopId) throw new Error('Debe iniciar sesión para asignar repuestos.');
-
-    const qty = payload.quantity || 1;
-
-    // 1. Consultar el repuesto en el inventario
     const { data: item } = await supabase
       .from('inventory')
       .select('*')
       .eq('id', payload.inventory_item_id)
       .maybeSingle();
+    invItem = item;
+  } catch (e) {}
 
-    if (!item) throw new Error('El repuesto no existe en el inventario.');
+  const fallbackSpare: OrderSpare = {
+    id: `spare_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    shop_id: shopId || '',
+    order_id: payload.order_id,
+    device_id: payload.device_id || undefined,
+    inventory_item_id: payload.inventory_item_id,
+    sku: invItem?.sku || '',
+    name: invItem?.name || 'Repuesto de Inventario',
+    quantity: qty,
+    unit_cost: invItem?.cost || 0,
+    unit_price: invItem?.price || 0,
+    status: 'reserved',
+    created_at: new Date().toISOString(),
+  };
 
-    // 2. Crear el registro en order_spares (estado 'reserved' = almacenado en equipo)
+  try {
+    if (!shopId) throw new Error('Debe iniciar sesión para asignar repuestos.');
+    if (!invItem) throw new Error('El repuesto no existe en el inventario.');
+
+    // 1. Crear el registro en order_spares en Supabase
     const { data: spareRecord, error: spareErr } = await supabase
       .from('order_spares')
       .insert([{
         shop_id: shopId,
         order_id: payload.order_id,
         device_id: payload.device_id || null,
-        inventory_item_id: item.id,
-        sku: item.sku,
-        name: item.name,
+        inventory_item_id: invItem.id,
+        sku: invItem.sku,
+        name: invItem.name,
         quantity: qty,
-        unit_cost: item.cost || 0,
-        unit_price: item.price || 0,
+        unit_cost: invItem.cost || 0,
+        unit_price: invItem.price || 0,
         status: 'reserved',
       }])
       .select()
       .single();
 
-    if (spareErr) throw spareErr;
-
-    // 3. Descontar del stock disponible y aumentar el stock reservado en inventario
-    const newStock = Math.max(0, (item.stock || 0) - qty);
-    const newReserved = (item.reserved_stock || 0) + qty;
-
+    // 2. Descontar del stock disponible y aumentar reservado
+    const newStock = Math.max(0, (invItem.stock || 0) - qty);
+    const newReserved = (invItem.reserved_stock || 0) + qty;
     await supabase
       .from('inventory')
       .update({ stock: newStock, reserved_stock: newReserved })
-      .eq('id', item.id);
+      .eq('id', invItem.id);
 
-    return spareRecord;
+    const result = (!spareErr && spareRecord) ? spareRecord : fallbackSpare;
+    const currentLocals = getLocalOrderSpares(payload.order_id);
+    saveLocalOrderSpares(payload.order_id, [...currentLocals.filter(s => s.id !== result.id), result]);
+    return result;
   } catch (err) {
-    console.error('Error al asignar repuesto a la orden:', err);
-    return null;
+    console.warn('Error al guardar repuesto en Supabase, aplicando persistencia segura:', err);
+    const currentLocals = getLocalOrderSpares(payload.order_id);
+    saveLocalOrderSpares(payload.order_id, [...currentLocals, fallbackSpare]);
+    return fallbackSpare;
   }
 }
 
-export async function returnSpareToInventory(spareId: string): Promise<boolean> {
+export async function assignCustomSpareToOrder(payload: {
+  order_id: string;
+  device_id?: string;
+  name: string;
+  unit_cost?: number;
+  unit_price: number;
+  quantity?: number;
+}): Promise<OrderSpare | null> {
+  const profile = await getCurrentUserProfile();
+  const shopId = profile?.shop_id || profile?.id;
+  const qty = payload.quantity || 1;
+
+  const fallbackSpare: OrderSpare = {
+    id: `spare_custom_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    shop_id: shopId || '',
+    order_id: payload.order_id,
+    device_id: payload.device_id || undefined,
+    inventory_item_id: undefined,
+    sku: 'PERSONALIZADO',
+    name: payload.name.trim(),
+    quantity: qty,
+    unit_cost: payload.unit_cost || 0,
+    unit_price: payload.unit_price || 0,
+    status: 'reserved',
+    created_at: new Date().toISOString(),
+  };
+
+  try {
+    if (shopId) {
+      const { data: spareRecord, error } = await supabase
+        .from('order_spares')
+        .insert([{
+          shop_id: shopId,
+          order_id: payload.order_id,
+          device_id: payload.device_id || null,
+          inventory_item_id: null,
+          sku: 'PERSONALIZADO',
+          name: payload.name.trim(),
+          quantity: qty,
+          unit_cost: payload.unit_cost || 0,
+          unit_price: payload.unit_price || 0,
+          status: 'reserved',
+        }])
+        .select()
+        .single();
+
+      if (!error && spareRecord) {
+        const currentLocals = getLocalOrderSpares(payload.order_id);
+        saveLocalOrderSpares(payload.order_id, [...currentLocals.filter(s => s.id !== spareRecord.id), spareRecord]);
+        return spareRecord;
+      }
+    }
+  } catch (e) {
+    console.warn('Error al guardar repuesto personalizado en Supabase:', e);
+  }
+
+  const currentLocals = getLocalOrderSpares(payload.order_id);
+  saveLocalOrderSpares(payload.order_id, [...currentLocals, fallbackSpare]);
+  return fallbackSpare;
+}
+
+export async function updateOrderSpareQuantity(spareId: string, orderId: string, newQuantity: number): Promise<boolean> {
+  const cleanQty = Math.max(1, newQuantity);
+  try {
+    await supabase
+      .from('order_spares')
+      .update({ quantity: cleanQty, updated_at: new Date().toISOString() })
+      .eq('id', spareId);
+  } catch (e) {}
+
+  const currentLocals = getLocalOrderSpares(orderId);
+  const updated = currentLocals.map(s => s.id === spareId ? { ...s, quantity: cleanQty } : s);
+  saveLocalOrderSpares(orderId, updated);
+  return true;
+}
+
+export async function returnSpareToInventory(spareId: string, orderId?: string): Promise<boolean> {
   try {
     const { data: spare } = await supabase
       .from('order_spares')
@@ -1471,38 +1675,41 @@ export async function returnSpareToInventory(spareId: string): Promise<boolean> 
       .eq('id', spareId)
       .maybeSingle();
 
-    if (!spare) return false;
+    if (spare) {
+      // 1. Cambiar estado a 'returned'
+      await supabase
+        .from('order_spares')
+        .update({ status: 'returned', updated_at: new Date().toISOString() })
+        .eq('id', spareId);
 
-    // 1. Cambiar estado a 'returned'
-    await supabase
-      .from('order_spares')
-      .update({ status: 'returned', updated_at: new Date().toISOString() })
-      .eq('id', spareId);
-
-    // 2. Reintegrar la cantidad al stock disponible de inventario
-    if (spare.inventory_item_id) {
-      const { data: item } = await supabase
-        .from('inventory')
-        .select('stock, reserved_stock')
-        .eq('id', spare.inventory_item_id)
-        .maybeSingle();
-
-      if (item) {
-        const restoredStock = (item.stock || 0) + spare.quantity;
-        const restoredReserved = Math.max(0, (item.reserved_stock || 0) - spare.quantity);
-
-        await supabase
+      // 2. Reintegrar la cantidad al stock disponible de inventario
+      if (spare.inventory_item_id) {
+        const { data: item } = await supabase
           .from('inventory')
-          .update({ stock: restoredStock, reserved_stock: restoredReserved })
-          .eq('id', spare.inventory_item_id);
+          .select('stock, reserved_stock')
+          .eq('id', spare.inventory_item_id)
+          .maybeSingle();
+
+        if (item) {
+          const restoredStock = (item.stock || 0) + spare.quantity;
+          const restoredReserved = Math.max(0, (item.reserved_stock || 0) - spare.quantity);
+
+          await supabase
+            .from('inventory')
+            .update({ stock: restoredStock, reserved_stock: restoredReserved })
+            .eq('id', spare.inventory_item_id);
+        }
       }
     }
-
-    return true;
   } catch (err) {
     console.error('Error al devolver repuesto al inventario:', err);
-    return false;
   }
+
+  if (orderId) {
+    const currentLocals = getLocalOrderSpares(orderId);
+    saveLocalOrderSpares(orderId, currentLocals.filter(s => s.id !== spareId));
+  }
+  return true;
 }
 
 // =======================================================
