@@ -96,8 +96,9 @@ export default function NotebooksList({ products }: NotebooksListProps) {
                 <span className="text-2xl font-black text-primary font-mono tracking-tight">
                   ${product.precio.toLocaleString('es-AR')}
                 </span>
-                <span className="text-xs text-on-surface-variant line-through font-mono">
-                  Tarjeta: ${product.precio_tarjeta.toLocaleString('es-AR')}
+                <span className="text-xs text-on-surface-variant font-mono flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm text-neon-cyan">credit_card</span>
+                  Aceptamos tarjetas de crédito
                 </span>
               </div>
               

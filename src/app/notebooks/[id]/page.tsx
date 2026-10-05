@@ -74,17 +74,17 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
                   </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <div className="text-xs font-mono text-primary mb-1 uppercase tracking-wider">Precio Especial (Transf/Efvo)</div>
+                    <div className="text-xs font-mono text-primary mb-1 uppercase tracking-wider">Precio Efectivo / Transferencia</div>
                     <div className="text-4xl md:text-5xl font-black text-on-surface tracking-tighter">
                       ${product.precio.toLocaleString('es-AR')}
                     </div>
                   </div>
-                  <div className="text-left md:text-right">
-                    <div className="text-xs font-mono text-on-surface-variant mb-1">Precio Tarjeta</div>
-                    <div className="text-xl font-bold text-on-surface-variant line-through opacity-70">
-                      ${product.precio_tarjeta.toLocaleString('es-AR')}
+                  <div className="sm:text-right">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container-low border border-cyber-border text-on-surface text-sm font-medium">
+                      <span className="material-symbols-outlined text-base text-neon-cyan">credit_card</span>
+                      Aceptamos tarjetas de crédito
                     </div>
                   </div>
                 </div>
