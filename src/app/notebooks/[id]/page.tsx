@@ -93,7 +93,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
               <div className="mt-auto pt-6">
                 {product.disponible ? (
                   <a 
-                    href={`https://wa.me/TUNUMERODEWHATSAPP?text=Hola,%20me%20interesa%20el%20equipo%20${encodeURIComponent(product.titulo)}%20(ID:%20${product.id})`}
+                    href={`https://wa.me/5492646211278?text=Hola,%20me%20interesa%20el%20equipo%20${encodeURIComponent(product.titulo)}%20(ID:%20${product.id})`}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center justify-center gap-2 w-full text-center bg-primary hover:bg-primary-container text-on-primary font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] font-sans text-lg"

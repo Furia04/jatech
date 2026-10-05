@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Cpu, Menu, X, ArrowUpRight, MessageSquare, Instagram, Wrench } from "lucide-react";
 import { CoreMode } from "@/types";
@@ -14,6 +16,8 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const isHome = pathname === "/";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -24,11 +28,31 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
   }, []);
 
   const navLinks = [
-    { label: "Equipos", href: "/notebooks" },
-    { label: "Servicios", href: "/#servicios" },
-    { label: "Gestión Técnicos", href: "/#gestion-tecnicos" },
-    { label: "Equipo", href: "/#equipo" },
-    { label: "Contacto", href: "/#contacto" },
+    { 
+      label: "Catálogo", 
+      href: "/notebooks", 
+      isActive: pathname?.startsWith("/notebooks") 
+    },
+    { 
+      label: "Servicios", 
+      href: isHome ? "#servicios" : "/#servicios", 
+      isActive: false 
+    },
+    { 
+      label: "Gestión Técnicos", 
+      href: isHome ? "#gestion-tecnicos" : "/#gestion-tecnicos", 
+      isActive: pathname?.startsWith("/GestionTecnicos") 
+    },
+    { 
+      label: "Equipo", 
+      href: isHome ? "#equipo" : "/#equipo", 
+      isActive: false 
+    },
+    { 
+      label: "Contacto", 
+      href: isHome ? "#contacto" : "/#contacto", 
+      isActive: false 
+    },
   ];
 
   return (
@@ -43,7 +67,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
         )}
       >
         {/* Brand Name: Jatech */}
-        <a href="#" className="flex items-center gap-2.5 group focus:outline-none">
+        <Link href="/" className="flex items-center gap-2.5 group focus:outline-none">
           <div className="logo-shimmer rounded-lg relative w-24 sm:w-28 h-8 sm:h-10">
             <img 
               src="/logo.png" 
@@ -51,24 +75,38 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
               className="object-contain w-full h-full"
             />
           </div>
-        </a>
+        </Link>
 
-        {/* Simple navigation links */}
-        <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
-          {navLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className="text-slate-300 hover:text-white transition-colors py-1 focus:outline-none"
-            >
-              {link.label}
-            </a>
-          ))}
+        {/* Navigation links */}
+        <div className="hidden md:flex items-center gap-4 lg:gap-6 text-sm font-medium text-slate-300">
+          {navLinks.map((link) => {
+            const isAnchor = link.href.startsWith("#");
+            const className = cn(
+              "transition-colors py-1 focus:outline-none",
+              link.isActive
+                ? "text-cyan-400 font-semibold"
+                : "text-slate-300 hover:text-white"
+            );
+
+            if (isAnchor) {
+              return (
+                <a key={link.label} href={link.href} className={className}>
+                  {link.label}
+                </a>
+              );
+            }
+
+            return (
+              <Link key={link.label} href={link.href} className={className}>
+                {link.label}
+              </Link>
+            );
+          })}
         </div>
 
         {/* Action Button & Mobile Toggle */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          <a
+          <Link
             href="/GestionTecnicos/login"
             className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-xs font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50 transition-all shadow-sm active:scale-95"
             title="Portal de Gestión para Técnicos y Talleres"
@@ -76,7 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
             <Wrench className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden sm:inline">Gestión Técnicos</span>
             <span className="sm:hidden">Técnicos</span>
-          </a>
+          </Link>
 
           <a
             href="https://instagram.com/jatech_sj"
@@ -96,8 +134,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
             className="inline-flex items-center gap-2 px-3.5 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-cyan-600 border border-white/20 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-transform"
           >
             <MessageSquare className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Consultar por WhatsApp</span>
-            <span className="md:hidden">WhatsApp</span>
+            <span className="hidden lg:inline">Consultar por WhatsApp</span>
+            <span className="lg:hidden">WhatsApp</span>
           </a>
 
           <button
@@ -121,28 +159,52 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
             className="absolute top-16 left-4 right-4 bg-[#0a0a16]/95 border border-white/15 rounded-2xl p-5 shadow-2xl flex flex-col gap-3 md:hidden z-50 backdrop-blur-xl"
           >
             <div className="flex flex-col gap-1">
-              {navLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-white/5 flex items-center justify-between"
-                >
-                  {link.label}
-                  <ArrowUpRight className="w-4 h-4 text-slate-400" />
-                </a>
-              ))}
+              {navLinks.map((link) => {
+                const isAnchor = link.href.startsWith("#");
+                const className = cn(
+                  "px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-between transition-colors",
+                  link.isActive
+                    ? "bg-cyan-500/15 text-cyan-300 font-semibold border border-cyan-500/30"
+                    : "text-slate-200 hover:bg-white/5"
+                );
+
+                if (isAnchor) {
+                  return (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={className}
+                    >
+                      <span>{link.label}</span>
+                      <ArrowUpRight className="w-4 h-4 text-slate-400" />
+                    </a>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={className}
+                  >
+                    <span>{link.label}</span>
+                    <ArrowUpRight className="w-4 h-4 text-slate-400" />
+                  </Link>
+                );
+              })}
             </div>
 
             <div className="flex flex-col gap-2 mt-2">
-              <a
+              <Link
                 href="/GestionTecnicos/login"
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full py-2.5 rounded-xl text-xs font-semibold text-center text-amber-300 bg-amber-500/15 border border-amber-500/30 flex items-center justify-center gap-2 shadow-sm"
               >
                 <Wrench className="w-4 h-4 text-amber-400" />
                 Portal Gestión de Técnicos & Talleres
-              </a>
+              </Link>
 
               <a
                 href="https://wa.me/5492646211278?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta%20o%20pedir%20presupuesto."
