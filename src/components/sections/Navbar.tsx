@@ -7,8 +7,8 @@ import { CoreMode } from "@/types";
 import { cn } from "@/lib/utils";
 
 interface NavbarProps {
-  activeCore: CoreMode;
-  setActiveCore: (core: CoreMode) => void;
+  activeCore?: CoreMode;
+  setActiveCore?: (core: CoreMode) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => {
@@ -24,10 +24,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
   }, []);
 
   const navLinks = [
-    { label: "Servicios", href: "#servicios" },
-    { label: "Gestión Técnicos", href: "#gestion-tecnicos" },
-    { label: "Equipo", href: "#equipo" },
-    { label: "Contacto", href: "#contacto" },
+    { label: "Equipos", href: "/notebooks" },
+    { label: "Servicios", href: "/#servicios" },
+    { label: "Gestión Técnicos", href: "/#gestion-tecnicos" },
+    { label: "Equipo", href: "/#equipo" },
+    { label: "Contacto", href: "/#contacto" },
   ];
 
   return (

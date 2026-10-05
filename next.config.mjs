@@ -4,7 +4,7 @@ const cspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-eval' 'unsafe-inline' https://sdk.mercadopago.com https://http2.mlstatic.com https://*.mercadopago.com https://va.vercel-scripts.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-  img-src 'self' data: blob: https://*.supabase.co https://*.mercadopago.com https://*.mlstatic.com https://http2.mlstatic.com https://images.unsplash.com;
+  img-src 'self' data: blob: https://*.supabase.co https://*.mercadopago.com https://*.mlstatic.com https://http2.mlstatic.com https://images.unsplash.com https://offsalenotebook.com.ar;
   font-src 'self' https://fonts.gstatic.com data:;
   connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mercadopago.com https://*.mercadopago.com https://va.vercel-scripts.com https://vitals.vercel-insights.com;
   frame-src 'self' https://*.mercadopago.com https://www.mercadopago.com;
