@@ -23,6 +23,7 @@ Este roadmap traza la construcción incremental del sistema de gestión de super
 ## Phase Details
 
 ### Phase 1: Arquitectura de Datos y Multi-Tenant
+
 **Goal**: Establecer las tablas relacionales, enums, triggers y políticas Row Level Security (RLS) en Supabase para el aislamiento estricto de los datos de supermercado por `shop_id`.
 **Depends on**: Nothing (primera fase)
 **Requirements**: TENANT-01, TENANT-02
@@ -30,13 +31,18 @@ Este roadmap traza la construcción incremental del sistema de gestión de super
   1. Las tablas `market_products`, `market_categories`, `market_stock_movements`, `market_cash_shifts`, `market_cash_movements`, `market_sales`, `market_sale_items` y `market_mp_configs` existen en Supabase.
   2. Todas las consultas filtran y restringen el acceso estrictamente al `shop_id` del usuario autenticado vía RLS.
   3. Los roles de usuario (cajero vs administrador) restringen las operaciones críticas de administración y configuración.
+
 **Plans**: 2 plans
 
 Plans:
+**Wave 1**
 - [ ] 01-01: Diseñar y aplicar el script SQL de migración en Supabase con tablas, índices y RLS para supermercado
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 01-02: Definir los tipos TypeScript y el servicio de cliente/servidor para el dominio de supermercado
 
 ### Phase 2: Catálogo de Productos y Precios
+
 **Goal**: Brindar a los comercios una interfaz completa para la gestión de productos, códigos de barra EAN-13/UPC, costos, márgenes y categorías.
 **Depends on**: Phase 1
 **Requirements**: CAT-01, CAT-02, CAT-03, CAT-04
@@ -45,6 +51,7 @@ Plans:
   2. El sistema valida códigos de barras y admite productos vendidos por unidad o por peso/fraccionable.
   3. La búsqueda predictiva responde en menos de 100ms tanto por texto como por escaneo de código de barras.
   4. Es posible importar y exportar el catálogo completo mediante archivo CSV/Excel.
+
 **Plans**: 2 plans
 
 Plans:
@@ -52,6 +59,7 @@ Plans:
 - [ ] 02-02: Construir la interfaz de gestión de catálogo, modal de edición y buscador interactivo con escaneo
 
 ### Phase 3: Control de Stock y Movimientos
+
 **Goal**: Mantener el inventario actualizado en tiempo real con historial de movimientos y avisos de reposición.
 **Depends on**: Phase 2
 **Requirements**: STK-01, STK-02, STK-03, STK-04
@@ -59,6 +67,7 @@ Plans:
   1. Cada producto refleja sus existencias actuales y umbral de stock mínimo por sucursal.
   2. El usuario puede registrar entradas y salidas manuales de stock justificando motivo (merma, reposición, ajuste).
   3. La interfaz destaca alertas visuales inmediatas para productos sin stock o próximos a agotarse.
+
 **Plans**: 2 plans
 
 Plans:
@@ -66,6 +75,7 @@ Plans:
 - [ ] 03-02: Construir la vista de inventario con filtros de stock crítico y panel de ajustes manuales
 
 ### Phase 4: Turnos, Arqueos y Resumen de Caja
+
 **Goal**: Proporcionar control operativo y financiero de las cajas mediante apertura de turnos, registro de movimientos y cierre Z.
 **Depends on**: Phase 1
 **Requirements**: CASH-01, CASH-02, CASH-03, CASH-04
@@ -74,6 +84,7 @@ Plans:
   2. El cajero/encargado puede ingresar y retirar dinero en efectivo con descripción del concepto.
   3. El resumen de caja en vivo totaliza los ingresos clasificados por medio de pago (efectivo, MP, tarjetas).
   4. El cierre Z calcula y registra automáticamente la diferencia entre el dinero declarado en arqueo y el registrado por el sistema.
+
 **Plans**: 2 plans
 
 Plans:
@@ -81,6 +92,7 @@ Plans:
 - [ ] 04-02: Desarrollar la interfaz de resumen de caja, modal de arqueo y reporte de cierre de turno
 
 ### Phase 5: Punto de Venta (POS / TPV)
+
 **Goal**: Crear una terminal de cobro ágil para el cajero, optimizada para escaneo continuo, gestión de tickets y cobro rápido.
 **Depends on**: Phase 2, Phase 3, Phase 4
 **Requirements**: POS-01, POS-02, POS-03, POS-04, POS-05
@@ -89,6 +101,7 @@ Plans:
   2. El cajero puede multiplicar cantidades, modificar ítems y aplicar soporte para productos pesables.
   3. El cajero puede pausar ventas en espera y reanudarlas con un clic o atajo.
   4. El sistema calcula el vuelto con precisión al ingresar el efectivo entregado y descuenta el stock correspondiente.
+
 **Plans**: 3 plans
 
 Plans:
@@ -97,18 +110,21 @@ Plans:
 - [ ] 05-03: Implementar el flujo de finalización de venta, selección de medios de pago y descuento automático de stock
 
 ### Phase 6: Emisión e Impresión de Tickets
+
 **Goal**: Proveer la generación instantánea de comprobantes de venta optimizados para impresoras térmicas comerciales.
 **Depends on**: Phase 5
 **Requirements**: TKT-01, TKT-02
 **Success Criteria** (what must be TRUE):
   1. El ticket de venta se formatea perfectamente para anchos de 58mm y 80mm con datos del comercio y detalle de la compra.
   2. La impresión puede dispararse automáticamente al confirmar la venta o consultarse desde el histórico.
+
 **Plans**: 1 plan
 
 Plans:
 - [ ] 06-01: Desarrollar el componente de renderizado e impresión de tickets térmicos y vista de reimpresión
 
 ### Phase 7: Cobro QR Dinámico con Mercado Pago
+
 **Goal**: Integrar el cobro en el POS mediante código QR dinámico de Mercado Pago con acreditación instantánea.
 **Depends on**: Phase 5
 **Requirements**: MP-01, MP-02, MP-03
@@ -116,6 +132,7 @@ Plans:
   1. El comercio puede configurar sus credenciales de Mercado Pago de forma segura en su configuración de tienda.
   2. Al seleccionar Mercado Pago en el POS, se genera y muestra un código QR dinámico con el monto exacto.
   3. El POS detecta la acreditación del pago sin refrescar la página y completa la venta automáticamente.
+
 **Plans**: 2 plans
 
 Plans:
@@ -123,12 +140,14 @@ Plans:
 - [ ] 07-02: Integrar el modal de cobro QR en el flujo de checkout del POS
 
 ### Phase 8: Historial y Conciliación Mercado Pago
+
 **Goal**: Permitir la consulta directa del historial de cobros de Mercado Pago y su conciliación contra los cierres de caja.
 **Depends on**: Phase 4, Phase 7
 **Requirements**: MP-04, MP-05
 **Success Criteria** (what must be TRUE):
   1. El usuario puede visualizar la lista de transacciones y pagos recibidos en su cuenta de MP directamente en la plataforma.
   2. El sistema coteja las ventas cobradas por Mercado Pago con las acreditaciones reales de la API, alertando sobre discrepancias.
+
 **Plans**: 2 plans
 
 Plans:
@@ -136,12 +155,14 @@ Plans:
 - [ ] 08-02: Construir la vista de conciliación de Mercado Pago dentro del módulo de resumen de caja
 
 ### Phase 9: Métricas, Reportes y Auditoría
+
 **Goal**: Proporcionar paneles de análisis del negocio con indicadores de ventas, productos de mayor rotación y balances por medio de pago.
 **Depends on**: Phase 5, Phase 8
 **Requirements**: REP-01, REP-02
 **Success Criteria** (what must be TRUE):
   1. El panel muestra la evolución de ventas por día, semana y mes con gráficos interactivos.
   2. El informe detalla el ranking de productos más vendidos y el margen bruto estimado.
+
 **Plans**: 1 plan
 
 Plans:
