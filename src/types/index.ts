@@ -272,4 +272,8 @@ export interface CreateExtraJobInput {
   technician_id?: string | null;
 }
 
+// Re-exportar tipos del módulo de supermercado
+export * from './market';
+
+
 
