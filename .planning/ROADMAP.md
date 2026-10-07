@@ -55,7 +55,10 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
+**Wave 1**
 - [ ] 02-01: Implementar endpoints y servicios para CRUD e importación/exportación masiva de productos
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 02-02: Construir la interfaz de gestión de catálogo, modal de edición y buscador interactivo con escaneo
 
 ### Phase 3: Control de Stock y Movimientos
