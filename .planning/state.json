@@ -1,0 +1,58 @@
+{
+  "contract": "1.0.0",
+  "flavor": "core",
+  "milestone": null,
+  "phases": [
+    {
+      "number": "1",
+      "name": "Arquitectura de Datos y Multi-Tenant",
+      "status": "complete"
+    },
+    {
+      "number": "2",
+      "name": "Catálogo de Productos y Precios",
+      "status": "complete"
+    },
+    {
+      "number": "3",
+      "name": "Control de Stock y Movimientos",
+      "status": "pending"
+    },
+    {
+      "number": "4",
+      "name": "Turnos, Arqueos y Resumen de Caja",
+      "status": "pending"
+    },
+    {
+      "number": "5",
+      "name": "Punto de Venta (POS / TPV)",
+      "status": "pending"
+    },
+    {
+      "number": "6",
+      "name": "Emisión e Impresión de Tickets",
+      "status": "pending"
+    },
+    {
+      "number": "7",
+      "name": "Cobro QR Dinámico con Mercado Pago",
+      "status": "pending"
+    },
+    {
+      "number": "8",
+      "name": "Historial y Conciliación Mercado Pago",
+      "status": "pending"
+    },
+    {
+      "number": "9",
+      "name": "Métricas, Reportes y Auditoría",
+      "status": "pending"
+    }
+  ],
+  "next": {
+    "command": "/gsd-progress --next",
+    "label": "Advance to the next step (plan phase 3)",
+    "reason": "Phase 3 of 9 — needs a plan"
+  },
+  "updated_at": "2026-10-07T16:30:55.624Z"
+}

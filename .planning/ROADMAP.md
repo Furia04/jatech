@@ -11,7 +11,7 @@ Este roadmap traza la construcción incremental del sistema de gestión de super
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: Arquitectura de Datos y Multi-Tenant** - Esquema de base de datos PostgreSQL/Supabase, migraciones y políticas RLS para el dominio de supermercado (completed 2026-10-07)
-- [ ] **Phase 2: Catálogo de Productos y Precios** - Mantenimiento de productos, marcas, categorías, unidades de venta y búsqueda rápida por código de barras
+- [x] **Phase 2: Catálogo de Productos y Precios** - Mantenimiento de productos, marcas, categorías, unidades de venta y búsqueda rápida por código de barras (completed 2026-10-07)
 - [ ] **Phase 3: Control de Stock y Movimientos** - Gestión de inventario en tiempo real, alertas de stock mínimo y ajustes manuales (ingresos/mermas)
 - [ ] **Phase 4: Turnos, Arqueos y Resumen de Caja** - Apertura de turno con fondo inicial, registro de ingresos/retiros manuales y cierre Z con arqueo
 - [ ] **Phase 5: Punto de Venta (POS / TPV)** - Terminal de cobro ultrarrápido para cajeros con lector de barras, atajos de teclado y múltiples medios de pago
@@ -52,14 +52,14 @@ Plans:
   3. La búsqueda predictiva responde en menos de 100ms tanto por texto como por escaneo de código de barras.
   4. Es posible importar y exportar el catálogo completo mediante archivo CSV/Excel.
 
-**Plans**: 2 plans
+**Plans**: 2/2 plans complete
 
 Plans:
 **Wave 1**
-- [ ] 02-01: Implementar endpoints y servicios para CRUD e importación/exportación masiva de productos
+- [x] 02-01: Implementar endpoints y servicios para CRUD e importación/exportación masiva de productos
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 02-02: Construir la interfaz de gestión de catálogo, modal de edición y buscador interactivo con escaneo
+- [x] 02-02: Construir la interfaz de gestión de catálogo, modal de edición y buscador interactivo con escaneo
 
 ### Phase 3: Control de Stock y Movimientos
 
@@ -179,7 +179,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Arquitectura de Datos y Multi-Tenant | 2/2 | Complete    | 2026-10-07 |
-| 2. Catálogo de Productos y Precios | 0/2 | Not started | - |
+| 2. Catálogo de Productos y Precios | 2/2 | Complete    | 2026-10-07 |
 | 3. Control de Stock y Movimientos | 0/2 | Not started | - |
 | 4. Turnos, Arqueos y Resumen de Caja | 0/2 | Not started | - |
 | 5. Punto de Venta (POS / TPV) | 0/3 | Not started | - |

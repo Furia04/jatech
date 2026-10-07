@@ -38,10 +38,10 @@ created: "2026-10-07"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 02-01-01 | 01 | 1 | CAT-01 | — | Layout y sidebar dedicado para /market | typecheck | `npx tsc --noEmit` | ❌ W0 | ⬜ pending |
-| 02-01-02 | 01 | 1 | CAT-01 | — | Pantalla de catálogo /market/catalog y tabla densa con escáner | typecheck | `npx tsc --noEmit` | ❌ W0 | ⬜ pending |
-| 02-02-01 | 02 | 2 | CAT-02 | — | Modal de producto con cálculo de margen bidireccional y unidades | typecheck | `npx tsc --noEmit` | ❌ W0 | ⬜ pending |
-| 02-02-02 | 02 | 2 | CAT-03, CAT-04 | — | Modal de importación y exportación CSV con upsert inteligente | typecheck | `npx tsc --noEmit` | ❌ W0 | ⬜ pending |
+| 02-01-01 | 01 | 1 | CAT-01 | — | Layout y sidebar dedicado para /market | typecheck | `npx tsc --noEmit` | ✅ | ✅ green |
+| 02-01-02 | 01 | 1 | CAT-01 | — | Pantalla de catálogo /market/catalog y tabla densa con escáner | typecheck | `npx tsc --noEmit` | ✅ | ✅ green |
+| 02-02-01 | 02 | 2 | CAT-02 | — | Modal de producto con cálculo de margen bidireccional y unidades | typecheck | `npx tsc --noEmit` | ✅ | ✅ green |
+| 02-02-02 | 02 | 2 | CAT-03, CAT-04 | — | Modal de importación y exportación CSV con upsert inteligente | typecheck | `npx tsc --noEmit` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

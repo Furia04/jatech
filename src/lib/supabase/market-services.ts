@@ -243,6 +243,88 @@ export async function updateMarketProduct(input: UpdateMarketProductInput): Prom
   return data;
 }
 
+export async function batchUpsertMarketProducts(products: CreateMarketProductInput[]): Promise<{
+  inserted: number;
+  updated: number;
+  errors: string[];
+}> {
+  const ctx = await getMarketUserContext();
+  if (!ctx) throw new Error('No autorizado');
+
+  if (!products || products.length === 0) {
+    return { inserted: 0, updated: 0, errors: [] };
+  }
+
+  const validProducts = products.filter(
+    (p) => p.barcode && p.barcode.trim() !== '' && p.name && p.name.trim() !== ''
+  );
+
+  if (validProducts.length === 0) {
+    return { inserted: 0, updated: 0, errors: ['Ningún producto contiene código de barras y nombre válidos'] };
+  }
+
+  // Identificar existentes para métricas
+  const barcodes = validProducts.map((p) => p.barcode.trim());
+  const { data: existingRows } = await supabase
+    .from('market_products')
+    .select('barcode')
+    .eq('shop_id', ctx.shopId)
+    .in('barcode', barcodes);
+
+  const existingBarcodeSet = new Set((existingRows || []).map((r) => r.barcode));
+  let inserted = 0;
+  let updated = 0;
+
+  const recordsToUpsert = validProducts.map((p) => {
+    const isExisting = existingBarcodeSet.has(p.barcode.trim());
+    if (isExisting) {
+      updated++;
+    } else {
+      inserted++;
+    }
+
+    return {
+      shop_id: ctx.shopId,
+      barcode: p.barcode.trim(),
+      name: p.name.trim(),
+      brand: p.brand?.trim() || null,
+      category_id: p.category_id || null,
+      cost_price: Number(p.cost_price) || 0,
+      sale_price: Number(p.sale_price) || 0,
+      stock: Number(p.stock) || 0,
+      min_stock: Number(p.min_stock) || 5,
+      is_weighable: Boolean(p.is_weighable),
+      unit_type: p.unit_type || 'unit',
+      active: p.active !== false,
+      updated_at: new Date().toISOString(),
+    };
+  });
+
+  // Ejecutar upsert en lotes de 100 para no exceder límites de Supabase
+  const batchSize = 100;
+  const errors: string[] = [];
+
+  for (let i = 0; i < recordsToUpsert.length; i += batchSize) {
+    const batch = recordsToUpsert.slice(i, i + batchSize);
+    const { error } = await supabase
+      .from('market_products')
+      .upsert(batch, {
+        onConflict: 'shop_id,barcode',
+      });
+
+    if (error) {
+      console.error('Error en lote de batchUpsertMarketProducts:', error);
+      errors.push(`Error en lote ${Math.floor(i / batchSize) + 1}: ${error.message}`);
+    }
+  }
+
+  return {
+    inserted,
+    updated,
+    errors,
+  };
+}
+
 // =======================================================
 // 3. MOVIMIENTOS Y AJUSTES DE STOCK
 // =======================================================

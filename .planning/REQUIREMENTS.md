@@ -9,10 +9,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Catálogo y Productos (CAT)
 
-- [ ] **CAT-01**: El usuario puede crear, editar y listar productos con campos para código de barras (EAN-13/UPC), nombre, marca, categoría, costo, precio de venta y margen.
-- [ ] **CAT-02**: El sistema permite clasificar productos por tipo de venta: por unidad o por peso (kg/fraccionable).
-- [ ] **CAT-03**: El usuario puede buscar productos de forma instantánea por código de barras o texto predictivo.
-- [ ] **CAT-04**: El usuario puede importar y exportar masivamente productos mediante planillas CSV/Excel.
+- [x] **CAT-01**: El usuario puede crear, editar y listar productos con campos para código de barras (EAN-13/UPC), nombre, marca, categoría, costo, precio de venta y margen.
+- [x] **CAT-02**: El sistema permite clasificar productos por tipo de venta: por unidad o por peso (kg/fraccionable).
+- [x] **CAT-03**: El usuario puede buscar productos de forma instantánea por código de barras o texto predictivo.
+- [x] **CAT-04**: El usuario puede importar y exportar masivamente productos mediante planillas CSV/Excel.
 
 ### Control de Stock e Inventario (STK)
 
@@ -88,10 +88,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | TENANT-01 | Phase 1 | Complete |
 | TENANT-02 | Phase 1 | Complete |
-| CAT-01 | Phase 2 | Pending |
-| CAT-02 | Phase 2 | Pending |
-| CAT-03 | Phase 2 | Pending |
-| CAT-04 | Phase 2 | Pending |
+| CAT-01 | Phase 2 | Complete |
+| CAT-02 | Phase 2 | Complete |
+| CAT-03 | Phase 2 | Complete |
+| CAT-04 | Phase 2 | Complete |
 | STK-01 | Phase 3 | Pending |
 | STK-02 | Phase 3 | Pending |
 | STK-03 | Phase 3 | Pending |
