@@ -56,8 +56,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Multi-Tenant y Roles (TENANT)
 
-- [ ] **TENANT-01**: Aislamiento estricto de catálogo, stock, ventas, cajas y pagos de Mercado Pago por `shop_id` mediante Supabase RLS.
-- [ ] **TENANT-02**: Gestión de permisos y roles para el módulo de supermercado (Cajero: solo POS y su caja; Encargado/Admin: catálogo, compras, arqueos y reportes).
+- [x] **TENANT-01**: Aislamiento estricto de catálogo, stock, ventas, cajas y pagos de Mercado Pago por `shop_id` mediante Supabase RLS.
+- [x] **TENANT-02**: Gestión de permisos y roles para el módulo de supermercado (Cajero: solo POS y su caja; Encargado/Admin: catálogo, compras, arqueos y reportes).
 
 ## v2 Requirements
 
@@ -86,8 +86,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TENANT-01 | Phase 1 | Pending |
-| TENANT-02 | Phase 1 | Pending |
+| TENANT-01 | Phase 1 | Complete |
+| TENANT-02 | Phase 1 | Complete |
 | CAT-01 | Phase 2 | Pending |
 | CAT-02 | Phase 2 | Pending |
 | CAT-03 | Phase 2 | Pending |

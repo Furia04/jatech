@@ -10,7 +10,7 @@ Este roadmap traza la construcción incremental del sistema de gestión de super
 - Integer phases (1, 2, 3...): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Arquitectura de Datos y Multi-Tenant** - Esquema de base de datos PostgreSQL/Supabase, migraciones y políticas RLS para el dominio de supermercado
+- [x] **Phase 1: Arquitectura de Datos y Multi-Tenant** - Esquema de base de datos PostgreSQL/Supabase, migraciones y políticas RLS para el dominio de supermercado (completed 2026-10-07)
 - [ ] **Phase 2: Catálogo de Productos y Precios** - Mantenimiento de productos, marcas, categorías, unidades de venta y búsqueda rápida por código de barras
 - [ ] **Phase 3: Control de Stock y Movimientos** - Gestión de inventario en tiempo real, alertas de stock mínimo y ajustes manuales (ingresos/mermas)
 - [ ] **Phase 4: Turnos, Arqueos y Resumen de Caja** - Apertura de turno con fondo inicial, registro de ingresos/retiros manuales y cierre Z con arqueo
@@ -32,14 +32,14 @@ Este roadmap traza la construcción incremental del sistema de gestión de super
   2. Todas las consultas filtran y restringen el acceso estrictamente al `shop_id` del usuario autenticado vía RLS.
   3. Los roles de usuario (cajero vs administrador) restringen las operaciones críticas de administración y configuración.
 
-**Plans**: 2 plans
+**Plans**: 2/2 plans complete
 
 Plans:
 **Wave 1**
-- [ ] 01-01: Diseñar y aplicar el script SQL de migración en Supabase con tablas, índices y RLS para supermercado
+- [x] 01-01: Diseñar y aplicar el script SQL de migración en Supabase con tablas, índices y RLS para supermercado
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 01-02: Definir los tipos TypeScript y el servicio de cliente/servidor para el dominio de supermercado
+- [x] 01-02: Definir los tipos TypeScript y el servicio de cliente/servidor para el dominio de supermercado
 
 ### Phase 2: Catálogo de Productos y Precios
 
@@ -175,7 +175,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Arquitectura de Datos y Multi-Tenant | 0/2 | Not started | - |
+| 1. Arquitectura de Datos y Multi-Tenant | 2/2 | Complete    | 2026-10-07 |
 | 2. Catálogo de Productos y Precios | 0/2 | Not started | - |
 | 3. Control de Stock y Movimientos | 0/2 | Not started | - |
 | 4. Turnos, Arqueos y Resumen de Caja | 0/2 | Not started | - |
