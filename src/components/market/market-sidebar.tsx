@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Store,
   Boxes,
@@ -15,8 +15,10 @@ import {
   BadgeCheck,
   ShieldCheck,
   User,
+  LogOut,
 } from 'lucide-react';
 import { MarketUserContext } from '@/lib/supabase/market-services';
+import { supabase } from '@/lib/supabase/client';
 
 interface MarketSidebarProps {
   userContext?: MarketUserContext | null;
@@ -26,6 +28,17 @@ interface MarketSidebarProps {
 
 export function MarketSidebar({ userContext, isOpen = true, onClose }: MarketSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    try {
+      await supabase.auth.signOut();
+      router.push('/market/login');
+      router.refresh();
+    } catch (e) {
+      console.error('Error closing market session:', e);
+    }
+  }
 
   const navItems = [
     { href: '/market/catalog', label: 'Catálogo de Productos', icon: Boxes },
@@ -129,14 +142,14 @@ export function MarketSidebar({ userContext, isOpen = true, onClose }: MarketSid
             </div>
           </div>
 
-          {/* Botón de retorno al inicio */}
-          <Link
-            href="/"
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium text-slate-400 hover:text-white bg-slate-900/40 hover:bg-slate-900 border border-slate-800/60 rounded-xl transition-all"
+          {/* Cerrar Sesión */}
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl transition-all cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Volver al Menú General</span>
-          </Link>
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Cerrar Sesión</span>
+          </button>
         </div>
       </aside>
     </>

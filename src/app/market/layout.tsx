@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { MarketSidebar } from '@/components/market/market-sidebar';
 import { getMarketUserContext, MarketUserContext } from '@/lib/supabase/market-services';
 import { Menu, Store, Loader2 } from 'lucide-react';
@@ -10,23 +11,54 @@ export default function MarketLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const router = useRouter();
   const [userContext, setUserContext] = useState<MarketUserContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
+    // Si estamos en la página de login, no forzar redirección
+    if (pathname === '/market/login') {
+      setLoading(false);
+      return;
+    }
+
     async function loadContext() {
       try {
         const ctx = await getMarketUserContext();
         setUserContext(ctx);
+        if (!ctx) {
+          router.push(`/market/login?redirect=${encodeURIComponent(pathname)}`);
+        }
       } catch (e) {
         console.error('Error loading market user context:', e);
+        router.push(`/market/login?redirect=${encodeURIComponent(pathname)}`);
       } finally {
         setLoading(false);
       }
     }
     loadContext();
-  }, []);
+  }, [pathname, router]);
+
+  // Si es la página de login, renderizar únicamente el contenido sin el layout de la app
+  if (pathname === '/market/login') {
+    return <>{children}</>;
+  }
+
+  // Loader de autenticación
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl">
+          <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
+          <span className="text-xs font-semibold text-slate-300">
+            Cargando entorno de Supermercado...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row antialiased font-sans">
