@@ -12,7 +12,7 @@ Este roadmap traza la construcción incremental del sistema de gestión de super
 
 - [x] **Phase 1: Arquitectura de Datos y Multi-Tenant** - Esquema de base de datos PostgreSQL/Supabase, migraciones y políticas RLS para el dominio de supermercado (completed 2026-10-07)
 - [x] **Phase 2: Catálogo de Productos y Precios** - Mantenimiento de productos, marcas, categorías, unidades de venta y búsqueda rápida por código de barras (completed 2026-10-07)
-- [ ] **Phase 3: Control de Stock y Movimientos** - Gestión de inventario en tiempo real, alertas de stock mínimo y ajustes manuales (ingresos/mermas)
+- [x] **Phase 3: Control de Stock y Movimientos** - Gestión de inventario en tiempo real, alertas de stock mínimo y ajustes manuales (ingresos/mermas) (completed 2026-10-10)
 - [ ] **Phase 4: Turnos, Arqueos y Resumen de Caja** - Apertura de turno con fondo inicial, registro de ingresos/retiros manuales y cierre Z con arqueo
 - [ ] **Phase 5: Punto de Venta (POS / TPV)** - Terminal de cobro ultrarrápido para cajeros con lector de barras, atajos de teclado y múltiples medios de pago
 - [ ] **Phase 6: Emisión e Impresión de Tickets** - Formateo y motor de impresión de tickets térmicos (58mm/80mm) y comprobantes de venta
@@ -71,14 +71,14 @@ Plans:
   2. El usuario puede registrar entradas y salidas manuales de stock justificando motivo (merma, reposición, ajuste).
   3. La interfaz destaca alertas visuales inmediatas para productos sin stock o próximos a agotarse.
 
-**Plans**: 2 plans
+**Plans**: 2/2 plans complete
 
 Plans:
 **Wave 1**
-- [ ] 03-01: Vista principal de inventario, KPIs económicos, semáforo de existencias y servicio de movimientos
+- [x] 03-01: Vista principal de inventario, KPIs económicos, semáforo de existencias y servicio de movimientos
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 03-02: Modal de ajuste manual de stock con cálculo de deltas y visor de auditoría trazable
+- [x] 03-02: Modal de ajuste manual de stock con cálculo de deltas y visor de auditoría trazable
 
 ### Phase 4: Turnos, Arqueos y Resumen de Caja
 
@@ -183,7 +183,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 |-------|----------------|--------|-----------|
 | 1. Arquitectura de Datos y Multi-Tenant | 2/2 | Complete    | 2026-10-07 |
 | 2. Catálogo de Productos y Precios | 2/2 | Complete    | 2026-10-07 |
-| 3. Control de Stock y Movimientos | 0/2 | Not started | - |
+| 3. Control de Stock y Movimientos | 2/2 | Complete    | 2026-10-10 |
 | 4. Turnos, Arqueos y Resumen de Caja | 0/2 | Not started | - |
 | 5. Punto de Venta (POS / TPV) | 0/3 | Not started | - |
 | 6. Emisión e Impresión de Tickets | 0/1 | Not started | - |

@@ -38,10 +38,10 @@ created: "2026-10-10"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 03-01-01 | 01 | 1 | STK-01, STK-04 | — | Pantalla /market/inventory con KPIs y filtros de criticidad | typecheck | `npx tsc --noEmit` | ❌ W0 | ⬜ pending |
-| 03-01-02 | 01 | 1 | STK-01, STK-03 | — | Servicio fetchMarketStockMovements en market-services.ts | typecheck | `npx tsc --noEmit` | ❌ W0 | ⬜ pending |
-| 03-02-01 | 02 | 2 | STK-02, STK-03 | — | Modal de ajuste manual de stock con justificación obligatoria | typecheck | `npx tsc --noEmit` | ❌ W0 | ⬜ pending |
-| 03-02-02 | 02 | 2 | STK-03 | — | Modal / Drawer de historial de auditoría de movimientos | typecheck | `npx tsc --noEmit` | ❌ W0 | ⬜ pending |
+| 03-01-01 | 01 | 1 | STK-01, STK-04 | — | Pantalla /market/inventory con KPIs y filtros de criticidad | typecheck | `npx tsc --noEmit` | ✅ | ✅ green |
+| 03-01-02 | 01 | 1 | STK-01, STK-03 | — | Servicio fetchMarketStockMovements en market-services.ts | typecheck | `npx tsc --noEmit` | ✅ | ✅ green |
+| 03-02-01 | 02 | 2 | STK-02, STK-03 | — | Modal de ajuste manual de stock con justificación obligatoria | typecheck | `npx tsc --noEmit` | ✅ | ✅ green |
+| 03-02-02 | 02 | 2 | STK-03 | — | Modal / Drawer de historial de auditoría de movimientos | typecheck | `npx tsc --noEmit` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

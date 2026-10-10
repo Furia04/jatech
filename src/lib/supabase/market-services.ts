@@ -409,6 +409,43 @@ export async function adjustMarketProductStock(
   return data;
 }
 
+export async function fetchMarketStockMovements(options?: {
+  productId?: string;
+  type?: StockMovementType;
+  limit?: number;
+}): Promise<MarketStockMovement[]> {
+  const ctx = await getMarketUserContext();
+  if (!ctx) return [];
+
+  let query = supabase
+    .from('market_stock_movements')
+    .select('*, product:market_products(*), user:users(email, full_name)')
+    .eq('shop_id', ctx.shopId);
+
+  if (options?.productId) {
+    query = query.eq('product_id', options.productId);
+  }
+
+  if (options?.type) {
+    query = query.eq('type', options.type);
+  }
+
+  query = query.order('created_at', { ascending: false });
+
+  if (options?.limit) {
+    query = query.limit(options.limit);
+  } else {
+    query = query.limit(100);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error('Error fetching market stock movements:', error);
+    return [];
+  }
+  return data || [];
+}
+
 // =======================================================
 // 4. TURNOS Y SESIONES DE CAJA
 // =======================================================

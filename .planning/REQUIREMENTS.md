@@ -16,10 +16,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Control de Stock e Inventario (STK)
 
-- [ ] **STK-01**: Cada producto mantiene su stock actual y umbral de stock mínimo por sucursal/tenant.
-- [ ] **STK-02**: El sistema descuenta stock automáticamente al completar cada venta y lo repone si la venta se anula.
-- [ ] **STK-03**: El usuario puede registrar ajustes manuales de stock especificando el motivo (ingreso de mercadería, rotura, merma, conteo físico).
-- [ ] **STK-04**: El sistema muestra alertas visuales de productos con stock bajo o agotado.
+- [x] **STK-01**: Cada producto mantiene su stock actual y umbral de stock mínimo por sucursal/tenant.
+- [x] **STK-02**: El sistema descuenta stock automáticamente al completar cada venta y lo repone si la venta se anula.
+- [x] **STK-03**: El usuario puede registrar ajustes manuales de stock especificando el motivo (ingreso de mercadería, rotura, merma, conteo físico).
+- [x] **STK-04**: El sistema muestra alertas visuales de productos con stock bajo o agotado.
 
 ### Punto de Venta - POS (POS)
 
@@ -92,10 +92,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CAT-02 | Phase 2 | Complete |
 | CAT-03 | Phase 2 | Complete |
 | CAT-04 | Phase 2 | Complete |
-| STK-01 | Phase 3 | Pending |
-| STK-02 | Phase 3 | Pending |
-| STK-03 | Phase 3 | Pending |
-| STK-04 | Phase 3 | Pending |
+| STK-01 | Phase 3 | Complete |
+| STK-02 | Phase 3 | Complete |
+| STK-03 | Phase 3 | Complete |
+| STK-04 | Phase 3 | Complete |
 | CASH-01 | Phase 4 | Pending |
 | CASH-02 | Phase 4 | Pending |
 | CASH-03 | Phase 4 | Pending |
