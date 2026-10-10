@@ -74,8 +74,11 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: Desarrollar lógica de auditoría y movimientos de stock (`market_stock_movements`)
-- [ ] 03-02: Construir la vista de inventario con filtros de stock crítico y panel de ajustes manuales
+**Wave 1**
+- [ ] 03-01: Vista principal de inventario, KPIs económicos, semáforo de existencias y servicio de movimientos
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 03-02: Modal de ajuste manual de stock con cálculo de deltas y visor de auditoría trazable
 
 ### Phase 4: Turnos, Arqueos y Resumen de Caja
 
