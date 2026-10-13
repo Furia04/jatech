@@ -29,6 +29,10 @@ import {
   fetchMarketProducts,
   updateMarketProduct,
 } from '@/lib/supabase/market-services';
+import {
+  getLocalCategories,
+  getLocalProducts,
+} from '@/lib/market-store/local-market-adapter';
 import { ProductModal } from '@/components/market/product-modal';
 import { CSVImportModal } from '@/components/market/csv-import-modal';
 
@@ -54,14 +58,20 @@ export default function MarketCatalogPage() {
   async function loadData() {
     setLoading(true);
     try {
-      const [catsData, prodsData] = await Promise.all([
+      let [catsData, prodsData] = await Promise.all([
         fetchMarketCategories(),
         fetchMarketProducts({ activeOnly: false }),
       ]);
+      if (!prodsData || prodsData.length === 0) {
+        catsData = getLocalCategories();
+        prodsData = getLocalProducts({ activeOnly: false });
+      }
       setCategories(catsData);
       setProducts(prodsData);
     } catch (e) {
-      console.error('Error cargando catálogo:', e);
+      console.warn('Usando catálogo local por fallback:', e);
+      setCategories(getLocalCategories());
+      setProducts(getLocalProducts({ activeOnly: false }));
     } finally {
       setLoading(false);
     }

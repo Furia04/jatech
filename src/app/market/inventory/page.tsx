@@ -25,6 +25,10 @@ import {
   fetchMarketCategories,
   fetchMarketProducts,
 } from '@/lib/supabase/market-services';
+import {
+  getLocalCategories,
+  getLocalProducts,
+} from '@/lib/market-store/local-market-adapter';
 import { StockAdjustmentModal } from '@/components/market/stock-adjustment-modal';
 import { StockHistoryModal } from '@/components/market/stock-history-modal';
 
@@ -50,14 +54,20 @@ export default function MarketInventoryPage() {
   async function loadData() {
     setLoading(true);
     try {
-      const [catsData, prodsData] = await Promise.all([
+      let [catsData, prodsData] = await Promise.all([
         fetchMarketCategories(),
         fetchMarketProducts({ activeOnly: false }),
       ]);
+      if (!prodsData || prodsData.length === 0) {
+        catsData = getLocalCategories();
+        prodsData = getLocalProducts({ activeOnly: false });
+      }
       setCategories(catsData);
       setProducts(prodsData);
     } catch (e) {
-      console.error('Error cargando inventario:', e);
+      console.warn('Usando inventario local por fallback:', e);
+      setCategories(getLocalCategories());
+      setProducts(getLocalProducts({ activeOnly: false }));
     } finally {
       setLoading(false);
     }

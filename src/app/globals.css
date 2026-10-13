@@ -152,28 +152,30 @@ html {
   scrollbar-width: none;
 }
 
-/* Print thermal ticket 80mm CSS */
+/* Print thermal ticket 80mm & 58mm CSS */
 @media print {
   body * {
     visibility: hidden;
   }
-  #printable-thermal-ticket, #printable-thermal-ticket * {
+  #printable-thermal-ticket, #printable-thermal-ticket *,
+  #thermal-receipt, #thermal-receipt * {
     visibility: visible;
   }
-  #printable-thermal-ticket {
+  #printable-thermal-ticket, #thermal-receipt {
     position: absolute;
     left: 0;
     top: 0;
-    width: 80mm;
-    padding: 4mm;
-    font-family: 'JetBrains Mono', monospace;
+    margin: 0;
+    padding: 2mm;
+    font-family: 'Courier New', Courier, monospace;
     font-size: 11px;
-    line-height: 1.2;
+    line-height: 1.15;
     color: black !important;
     background: white !important;
+    box-shadow: none !important;
   }
   @page {
-    size: 80mm auto;
+    size: auto;
     margin: 0;
   }
 }
