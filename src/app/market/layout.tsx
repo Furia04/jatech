@@ -21,9 +21,14 @@ export default function MarketLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moduleRestricted, setModuleRestricted] = useState(false);
 
+  const isAuthOrPublicPage =
+    pathname === '/market/login' ||
+    pathname === '/market/register' ||
+    pathname === '/market/checkout';
+
   useEffect(() => {
-    // Si estamos en login o checkout, no forzar restricciones
-    if (pathname === '/market/login' || pathname === '/market/checkout') {
+    // Si estamos en login, registro o checkout, no forzar restricciones
+    if (isAuthOrPublicPage) {
       setLoading(false);
       return;
     }
@@ -83,8 +88,8 @@ export default function MarketLayout({
     loadContext();
   }, [pathname, router]);
 
-  // Si es la página de login o checkout, renderizar sin el sidebar
-  if (pathname === '/market/login' || pathname === '/market/checkout') {
+  // Si es la página de login, registro o checkout, renderizar sin el sidebar ni header interno
+  if (isAuthOrPublicPage) {
     return <>{children}</>;
   }
 
