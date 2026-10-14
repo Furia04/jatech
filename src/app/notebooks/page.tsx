@@ -10,6 +10,8 @@ export const metadata: Metadata = {
 
 export default async function NotebooksPage() {
   const catalog = await getCatalog();
+  const products = catalog?.productos || [];
+  const syncDate = catalog?.generado ? new Date(catalog.generado * 1000).toLocaleString('es-AR') : 'Reciente';
 
   return (
     <main className="relative min-h-screen bg-obsidian text-slate-100 selection:bg-cyan-500/30 selection:text-white pt-24 pb-12">
@@ -23,11 +25,11 @@ export default async function NotebooksPage() {
           </div>
           <p className="text-on-surface-variant font-mono text-sm mt-2">
             Mostrando terminales de red disponibles. <span className="font-bold text-neon-cyan">Todos nuestros equipos son reacondicionados y cuentan con 3 meses de garantía.</span> 
-            <span className="ml-2 text-neon-violet">Última sincronización: {new Date(catalog.generado * 1000).toLocaleString('es-AR')}</span>
+            <span className="ml-2 text-neon-violet">Última sincronización: {syncDate}</span>
           </p>
         </div>
 
-        <NotebooksList products={catalog.productos} />
+        <NotebooksList products={products} />
       </div>
     </main>
   );

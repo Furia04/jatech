@@ -24,20 +24,49 @@ export interface CatalogFeed {
 
 export async function getCatalog(): Promise<CatalogFeed> {
   const url = 'https://jatech.offsalenotebook.com.ar/feed/6ce0f9a9c5880990cbbc159fe483531c.json';
-  
-  // ISR: Revalidar cada 1 hora (3600 segundos) para que se actualice solo
-  const res = await fetch(url, {
-    next: { revalidate: 3600 }
-  });
 
-  if (!res.ok) {
-    throw new Error('No se pudo obtener el catálogo de notebooks');
+  const defaultFeed: CatalogFeed = {
+    vendedor: 'JaTech',
+    generado: Math.floor(Date.now() / 1000),
+    moneda: 'ARS',
+    productos: [],
+  };
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    const res = await fetch(url, {
+      next: { revalidate: 3600 },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      console.warn(`[Catalog] Feed remoto respondió con status ${res.status}. Usando fallback resiliente.`);
+      return defaultFeed;
+    }
+
+    const data = await res.json();
+    if (!data || !Array.isArray(data.productos)) {
+      return defaultFeed;
+    }
+
+    return data;
+  } catch (err: any) {
+    console.warn('[Catalog] Error al obtener catálogo de notebooks remoto:', err?.message || err);
+    return defaultFeed;
   }
-
-  return res.json();
 }
 
 export async function getProductById(id: string): Promise<Product | undefined> {
-  const catalog = await getCatalog();
-  return catalog.productos.find(p => p.id === id);
+  try {
+    const catalog = await getCatalog();
+    if (!catalog?.productos) return undefined;
+    return catalog.productos.find((p) => p.id === id);
+  } catch (e) {
+    console.warn(`[Catalog] Error buscando producto ${id}:`, e);
+    return undefined;
+  }
 }

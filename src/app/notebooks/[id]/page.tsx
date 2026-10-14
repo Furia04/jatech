@@ -14,11 +14,21 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   };
 }
 
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
-  const catalog = await getCatalog();
-  return catalog.productos.map((product) => ({
-    id: product.id,
-  }));
+  try {
+    const catalog = await getCatalog();
+    if (!catalog?.productos || !Array.isArray(catalog.productos)) {
+      return [];
+    }
+    return catalog.productos.map((product) => ({
+      id: product.id,
+    }));
+  } catch (e) {
+    console.warn('[Notebooks] Error en generateStaticParams (no bloqueante):', e);
+    return [];
+  }
 }
 
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
