@@ -39,5 +39,10 @@ android/**/build/
 android/.gradle/
 local.properties
 
+# temporary / generated
+brag-output/
+feed.json
+
+
 # graphify
 graphify-out/

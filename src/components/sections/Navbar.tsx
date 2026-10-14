@@ -244,16 +244,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
 
         {/* Action Button & Mobile Toggle */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          <Link
-            href="/GestionTecnicos/login"
-            className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-xs font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50 transition-all shadow-sm active:scale-95"
-            title="Portal de Gestión para Técnicos y Talleres"
-          >
-            <Wrench className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Gestión Técnicos</span>
-            <span className="sm:hidden">Técnicos</span>
-          </Link>
-
           <a
             href="https://instagram.com/jatech_sj"
             target="_blank"

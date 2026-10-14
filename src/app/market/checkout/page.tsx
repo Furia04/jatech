@@ -3,8 +3,8 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { MarketLogo } from '@/components/ui/market-logo';
 import {
-  Store,
   CreditCard,
   CheckCircle2,
   ShieldCheck,
@@ -128,10 +128,8 @@ function MarketCheckoutContent() {
 
       <div className="w-full max-w-xl relative z-10 space-y-6">
         {/* Cabecera */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white shadow-xl shadow-emerald-500/20 mb-1 border border-emerald-400/30">
-            <Store className="w-7 h-7" />
-          </div>
+        <div className="text-center space-y-3 flex flex-col items-center">
+          <MarketLogo size="lg" />
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Membresía Mensual JaTech Market</span>

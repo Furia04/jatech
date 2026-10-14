@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Store, Mail, Lock, ArrowRight, AlertCircle, Loader2, Sparkles, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { MarketLogo } from '@/components/ui/market-logo';
 import { supabase } from '@/lib/supabase/client';
 
 function MarketLoginForm() {
@@ -40,8 +42,8 @@ function MarketLoginForm() {
         return;
       }
 
-      // Redirección directa al catálogo del supermercado
-      const redirectParam = searchParams.get('redirect') || '/market/catalog';
+      // Redirección directa al punto de venta o catálogo del supermercado
+      const redirectParam = searchParams.get('redirect') || '/market/pos';
       router.push(redirectParam);
       router.refresh();
     } catch (err: any) {
@@ -58,30 +60,25 @@ function MarketLoginForm() {
       <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10">
-        {/* Cabecera / Identidad de Marca */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white shadow-xl shadow-emerald-500/20 mb-3 border border-emerald-400/30">
-            <Store className="w-7 h-7" />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">NEXUS MARKET</h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Entorno Staging de Gestión de Supermercado & Punto de Venta
+        {/* Cabecera / Identidad de Marca Universal */}
+        <div className="flex flex-col items-center text-center mb-8">
+          <MarketLogo size="lg" className="mb-3" />
+          <p className="text-xs text-slate-400 max-w-sm mt-1 leading-relaxed">
+            Sistema integral de Punto de Venta (POS), control de stock inteligente, arqueo de cajas y gestión comercial.
           </p>
-          <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Módulo Autónomo 100% Desacoplado</span>
-          </div>
         </div>
 
         {/* Tarjeta de Inicio de Sesión */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8 backdrop-blur-xl">
-          <h2 className="text-lg font-bold text-white mb-1">Iniciar Sesión</h2>
-          <p className="text-xs text-slate-400 mb-6">
-            Ingresa tus credenciales para acceder al catálogo, stock y cajas.
-          </p>
+        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-2xl p-6 sm:p-8 backdrop-blur-xl space-y-6">
+          <div>
+            <h2 className="text-lg font-bold text-white mb-1">Iniciar Sesión</h2>
+            <p className="text-xs text-slate-400">
+              Ingresa tus credenciales para acceder a la terminal de ventas, stock y turnos.
+            </p>
+          </div>
 
           {errorMessage && (
-            <div className="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2.5">
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2.5">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMessage}</span>
             </div>
@@ -125,7 +122,7 @@ function MarketLoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-950 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="w-full mt-2 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-xl shadow-emerald-950 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               {loading ? (
                 <>
@@ -134,18 +131,25 @@ function MarketLoginForm() {
                 </>
               ) : (
                 <>
-                  <span>Ingresar al Sistema de Supermercado</span>
+                  <span>Ingresar al Sistema de Ventas</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
-        </div>
 
-        {/* Footer info */}
-        <p className="text-center text-[11px] text-slate-500 mt-6">
-          Rama de desarrollo aislada <code className="text-emerald-400">staging-market</code>
-        </p>
+          {/* Enlace hacia Registro */}
+          <div className="pt-2 border-t border-slate-800/80 text-center">
+            <span className="text-xs text-slate-400">¿Aún no tienes cuenta para tu comercio? </span>
+            <Link
+              href="/market/register"
+              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors inline-flex items-center gap-1"
+            >
+              <span>Registrar mi comercio</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -153,11 +157,13 @@ function MarketLoginForm() {
 
 export default function MarketLoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+        </div>
+      }
+    >
       <MarketLoginForm />
     </Suspense>
   );

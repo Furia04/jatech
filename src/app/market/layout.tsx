@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { MarketSidebar } from '@/components/market/market-sidebar';
+import { MarketLogo } from '@/components/ui/market-logo';
 import { getMarketUserContext, MarketUserContext } from '@/lib/supabase/market-services';
 import { supabase } from '@/lib/supabase/client';
-import { Menu, Store, Loader2, Lock, ArrowRight, Wrench, CreditCard } from 'lucide-react';
+import { Menu, Loader2, Lock, ArrowRight, Wrench, CreditCard } from 'lucide-react';
 
 export default function MarketLayout({
   children,
@@ -172,12 +173,7 @@ export default function MarketLayout({
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              <Store className="w-4 h-4" />
-            </div>
-            <span className="font-bold text-sm tracking-wide text-white">NEXUS MARKET</span>
-          </div>
+          <MarketLogo size="sm" />
           <div className="w-9" />
         </header>
 

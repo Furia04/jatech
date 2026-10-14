@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { MarketUserContext } from '@/lib/supabase/market-services';
 import { supabase } from '@/lib/supabase/client';
+import { MarketLogo } from '@/components/ui/market-logo';
 
 interface MarketSidebarProps {
   userContext?: MarketUserContext | null;
@@ -63,23 +64,10 @@ export function MarketSidebar({ userContext, isOpen = true, onClose }: MarketSid
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
-        {/* Header con marca del Supermercado */}
+        {/* Header con marca oficial JaTech Market */}
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-          <Link href="/market/catalog" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
-              <Store className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="font-bold text-white text-base tracking-wide flex items-center gap-1.5">
-                NEXUS MARKET
-                <span className="text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded">
-                  BETA
-                </span>
-              </div>
-              <div className="text-xs text-slate-400 truncate max-w-[140px]">
-                Gestión Supermercado
-              </div>
-            </div>
+          <Link href="/market/pos" className="flex items-center gap-2 group">
+            <MarketLogo size="sm" />
           </Link>
 
           {onClose && (
