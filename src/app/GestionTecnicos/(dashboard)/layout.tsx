@@ -21,6 +21,8 @@ import {
   RefreshCw,
   Gift,
   Sparkles,
+  Store,
+  Wrench,
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -83,6 +85,7 @@ export default function DashboardLayout({
           subscription_status: effectiveStatus,
           plan_price: Number(dbShop.plan_price) || 20000,
           active: effectiveActive,
+          subscription_module: dbShop.subscription_module || 'workshop',
           mp_preapproval_id: dbShop.mp_preapproval_id,
           trial_ends_at: effectiveTrialEndsAt,
           created_at: dbShop.created_at || new Date().toISOString(),
@@ -94,6 +97,7 @@ export default function DashboardLayout({
           name: profile.full_name ? `Taller de ${profile.full_name}` : 'Mi Taller',
           owner_email: profile.email,
           subscription_status: 'trialing',
+          subscription_module: 'workshop',
           plan_price: 20000,
           active: true,
           trial_ends_at: trialEndsAt,
@@ -115,6 +119,9 @@ export default function DashboardLayout({
     userProfile?.role === 'superadmin' ||
     userProfile?.email === 'furiaortiz04@gmail.com' ||
     (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL && userProfile?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL);
+
+  // Segregación estricta: Si el usuario tiene plan exclusivo de Supermercado
+  const isMarketOnlyUser = !isSuperAdmin && userShop?.subscription_module === 'market';
 
   const isTrialing = userShop?.subscription_status === 'trialing';
   const trialDaysRemaining = userShop?.trial_ends_at
@@ -192,6 +199,40 @@ export default function DashboardLayout({
             <div className="p-16 flex flex-col items-center justify-center gap-3 text-on-surface-variant">
               <Loader2 className="w-8 h-8 text-primary animate-spin" />
               <p className="font-body-sm text-xs">Consultando suscripción en Supabase...</p>
+            </div>
+          ) : isMarketOnlyUser ? (
+            /* CASO: USUARIO CON MEMBRESÍA EXCLUSIVA DE SUPERMERCADO */
+            <div className="max-w-md mx-auto my-12 bg-surface-container border border-outline-variant/60 rounded-3xl p-8 shadow-2xl space-y-6 text-center animate-in zoom-in-95 duration-200">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/20 shadow-inner">
+                <Store className="w-8 h-8" />
+              </div>
+
+              <div className="space-y-2">
+                <span className="font-label-caps text-xs text-emerald-400 font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 inline-block">
+                  Plan Retail Pro Activo
+                </span>
+                <h2 className="font-display-lg text-2xl font-bold text-on-surface">
+                  Acceso Exclusivo a JaTech Market
+                </h2>
+                <p className="font-body-md text-xs sm:text-sm text-on-surface-variant max-w-sm mx-auto leading-relaxed">
+                  Tu cuenta cuenta con suscripción al software de <strong>Supermercado y Punto de Venta (POS)</strong>. Para utilizar el sistema de órdenes y taller técnico, adquiere el módulo Taller.
+                </p>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <Link
+                  href="/market/pos"
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-title-sm text-xs font-bold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+                >
+                  <Store className="w-4 h-4" /> Ir a mi Supermercado (POS)
+                </Link>
+                <Link
+                  href={`/GestionTecnicos/checkout${userShop?.id ? `?shop_id=${userShop.id}` : ''}`}
+                  className="w-full bg-surface-container-high border border-outline-variant hover:bg-surface-container-highest text-on-surface font-title-sm text-xs font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  <Wrench className="w-4 h-4 text-amber-400" /> Contratar Módulo Taller ($20.000)
+                </Link>
+              </div>
             </div>
           ) : isSuspended ? (
             /* CASO 1: PANTALLA DE TALLER SUSPENDIDO */

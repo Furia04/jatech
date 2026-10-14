@@ -128,28 +128,48 @@ export async function POST(request: Request) {
     }
 
     const status = payment.status; // 'approved', 'pending', 'rejected', 'refunded', 'cancelled', etc.
-    const shopId = payment.external_reference; // ID del taller configurado al crear la preferencia / preapproval
+    const rawReference = payment.external_reference || '';
+    const [shopId, moduleType] = rawReference.includes('__')
+      ? rawReference.split('__')
+      : [rawReference, 'workshop'];
     const payerEmail = payment.payer?.email?.toLowerCase();
 
-    console.log(`[MercadoPago Webhook] Pago #${resourceId}: estado='${status}', shopId='${shopId}', payer='${payerEmail}'`);
+    console.log(`[MercadoPago Webhook] Pago #${resourceId}: estado='${status}', shopId='${shopId}', module='${moduleType}', payer='${payerEmail}'`);
 
     if (shopId) {
       if (status === 'approved') {
-        // Pago aprobado: Activar suscripción y estado del taller a 'active'
+        // Pago aprobado: Activar suscripción y estado de la tienda / taller
+        const updatePayload: Record<string, any> = {
+          subscription_status: 'active',
+          active: true,
+          subscription_module: moduleType || 'workshop',
+          mp_payment_id: String(payment.id),
+          updated_at: new Date().toISOString(),
+        };
+
         const { error: updateErr } = await supabaseAdmin
           .from('shops')
-          .update({
-            subscription_status: 'active',
-            active: true,
-            mp_payment_id: String(payment.id),
-            updated_at: new Date().toISOString(),
-          })
+          .update(updatePayload)
           .eq('id', shopId);
 
         if (updateErr) {
-          console.error(`[MercadoPago Webhook] Error al activar taller ${shopId} en Supabase:`, updateErr);
+          console.error(`[MercadoPago Webhook] Error al activar entidad ${shopId} en Supabase:`, updateErr);
         } else {
-          console.log(`[MercadoPago Webhook] ¡Taller ${shopId} activado exitosamente!`);
+          console.log(`[MercadoPago Webhook] ¡Entidad ${shopId} (${moduleType}) activada exitosamente!`);
+        }
+
+        // Si es pago de mercado, registrar en market_subscriptions
+        if (moduleType === 'market') {
+          await supabaseAdmin
+            .from('market_subscriptions')
+            .upsert([{
+              shop_id: shopId,
+              plan_id: 'plan-market-retail',
+              status: 'active',
+              mp_payment_id: String(payment.id),
+              price: Number(payment.transaction_amount) || 25000,
+              current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            }]);
         }
       } else if (status === 'rejected' || status === 'cancelled') {
         // Pago rechazado o cancelado

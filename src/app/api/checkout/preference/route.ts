@@ -4,7 +4,7 @@ import { MercadoPagoConfig, Preference } from 'mercadopago';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { shopId, email, shopName, planPrice } = body;
+    const { shopId, email, shopName, planPrice, moduleType = 'workshop' } = body;
 
     if (!shopId) {
       return NextResponse.json(
@@ -23,12 +23,15 @@ export async function POST(request: Request) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || `${protoHeader}://${hostHeader}`;
     const isLocalhost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1');
 
+    const isMarket = moduleType === 'market';
+    const redirectPath = isMarket ? '/market/checkout' : '/GestionTecnicos/checkout';
+
     if (!mpAccessToken) {
       console.warn('MP_ACCESS_TOKEN no configurado. Operando en modo simulación de checkout.');
       return NextResponse.json({
         id: `sim-pref-${Date.now()}`,
-        init_point: `${baseUrl}/GestionTecnicos/checkout?status=success&shop_id=${encodeURIComponent(shopId)}&simulated=true`,
-        sandbox_init_point: `${baseUrl}/GestionTecnicos/checkout?status=success&shop_id=${encodeURIComponent(shopId)}&simulated=true`,
+        init_point: `${baseUrl}${redirectPath}?status=success&shop_id=${encodeURIComponent(shopId)}&simulated=true`,
+        sandbox_init_point: `${baseUrl}${redirectPath}?status=success&shop_id=${encodeURIComponent(shopId)}&simulated=true`,
         simulated: true,
       });
     }
@@ -41,15 +44,26 @@ export async function POST(request: Request) {
 
     const preference = new Preference(client);
 
-    const price = Number(planPrice) > 0 ? Number(planPrice) : 20000;
-    const cleanShopName = shopName?.trim() || 'Taller de Servicio Técnico';
+    const defaultPrice = isMarket ? 25000 : 20000;
+    const price = Number(planPrice) > 0 ? Number(planPrice) : defaultPrice;
+    const defaultShopName = isMarket ? 'Comercio / Supermercado' : 'Taller de Servicio Técnico';
+    const cleanShopName = shopName?.trim() || defaultShopName;
+
+    const itemTitle = isMarket
+      ? `Membresía JaTech — Plan Market Retail (${cleanShopName})`
+      : `Membresía JaTech — Plan Taller Pro (${cleanShopName})`;
+    const itemDesc = isMarket
+      ? 'Acceso mensual completo al sistema POS de supermercado, turnos de caja Z y control de stock'
+      : 'Acceso mensual completo al sistema de gestión y órdenes de servicio técnico';
+    const itemId = isMarket ? 'plan-market-retail' : 'plan-taller-pro';
+    const statementDesc = isMarket ? 'JATECH MARKET' : 'JATECH PRO';
 
     const preferenceData: any = {
       items: [
         {
-          id: 'plan-taller-pro',
-          title: `Membresía JaTech — Plan Taller Pro (${cleanShopName})`,
-          description: 'Acceso mensual completo al sistema de gestión y órdenes de servicio técnico',
+          id: itemId,
+          title: itemTitle,
+          description: itemDesc,
           quantity: 1,
           unit_price: price,
           currency_id: 'ARS',
@@ -60,13 +74,13 @@ export async function POST(request: Request) {
             email: email.trim().toLowerCase(),
           }
         : undefined,
-      external_reference: shopId,
+      external_reference: `${shopId}__${moduleType}`,
       back_urls: {
-        success: `${baseUrl}/GestionTecnicos/checkout?status=success&shop_id=${encodeURIComponent(shopId)}`,
-        failure: `${baseUrl}/GestionTecnicos/checkout?status=failure&shop_id=${encodeURIComponent(shopId)}`,
-        pending: `${baseUrl}/GestionTecnicos/checkout?status=pending&shop_id=${encodeURIComponent(shopId)}`,
+        success: `${baseUrl}${redirectPath}?status=success&shop_id=${encodeURIComponent(shopId)}`,
+        failure: `${baseUrl}${redirectPath}?status=failure&shop_id=${encodeURIComponent(shopId)}`,
+        pending: `${baseUrl}${redirectPath}?status=pending&shop_id=${encodeURIComponent(shopId)}`,
       },
-      statement_descriptor: 'JATECH PRO',
+      statement_descriptor: statementDesc,
     };
 
     // Mercado Pago solo acepta auto_return y notification_url con dominios públicos HTTPS reales

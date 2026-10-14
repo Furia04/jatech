@@ -1,10 +1,22 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cpu, Menu, X, ArrowUpRight, MessageSquare, Instagram, Wrench } from "lucide-react";
+import {
+  Cpu,
+  Menu,
+  X,
+  ArrowUpRight,
+  MessageSquare,
+  Instagram,
+  Wrench,
+  Store,
+  ChevronDown,
+  Layers,
+  Sparkles,
+} from "lucide-react";
 import { CoreMode } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +28,8 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [softwareDropdownOpen, setSoftwareDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const isHome = pathname === "/";
 
@@ -25,6 +39,17 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setSoftwareDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const navLinks = [
@@ -39,11 +64,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
       isActive: false 
     },
     { 
-      label: "Gestión Técnicos", 
-      href: isHome ? "#gestion-tecnicos" : "/#gestion-tecnicos", 
-      isActive: pathname?.startsWith("/GestionTecnicos") 
-    },
-    { 
       label: "Equipo", 
       href: isHome ? "#equipo" : "/#equipo", 
       isActive: false 
@@ -54,6 +74,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
       isActive: false 
     },
   ];
+
+  const isSoftwareActive = pathname?.startsWith("/GestionTecnicos") || pathname?.startsWith("/market");
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 py-3.5 sm:py-4 transition-all duration-200">
@@ -77,9 +99,125 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
           </div>
         </Link>
 
-        {/* Navigation links */}
+        {/* Navigation links con Desplegable Softwares */}
         <div className="hidden md:flex items-center gap-4 lg:gap-6 text-sm font-medium text-slate-300">
-          {navLinks.map((link) => {
+          {/* Primeros links */}
+          {navLinks.slice(0, 2).map((link) => {
+            const isAnchor = link.href.startsWith("#");
+            const className = cn(
+              "transition-colors py-1 focus:outline-none",
+              link.isActive
+                ? "text-cyan-400 font-semibold"
+                : "text-slate-300 hover:text-white"
+            );
+
+            if (isAnchor) {
+              return (
+                <a key={link.label} href={link.href} className={className}>
+                  {link.label}
+                </a>
+              );
+            }
+
+            return (
+              <Link key={link.label} href={link.href} className={className}>
+                {link.label}
+              </Link>
+            );
+          })}
+
+          {/* Menú Desplegable: Softwares */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              type="button"
+              onClick={() => setSoftwareDropdownOpen(!softwareDropdownOpen)}
+              onMouseEnter={() => setSoftwareDropdownOpen(true)}
+              className={cn(
+                "flex items-center gap-1.5 py-1 transition-colors focus:outline-none rounded-lg px-2",
+                isSoftwareActive || softwareDropdownOpen
+                  ? "text-cyan-400 font-semibold bg-white/5"
+                  : "text-slate-300 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <span>Softwares</span>
+              <ChevronDown
+                className={cn(
+                  "w-3.5 h-3.5 transition-transform duration-200 text-slate-400",
+                  softwareDropdownOpen && "rotate-180 text-cyan-400"
+                )}
+              />
+            </button>
+
+            {/* Dropdown flotante */}
+            <AnimatePresence>
+              {softwareDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
+                  onMouseLeave={() => setSoftwareDropdownOpen(false)}
+                  className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-80 rounded-2xl bg-[#0a0a16]/95 border border-white/10 p-2 shadow-2xl backdrop-blur-xl z-50 flex flex-col gap-1"
+                >
+                  <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                    <span>Plataformas SaaS</span>
+                    <span className="text-cyan-400 font-bold">JaTech Suite</span>
+                  </div>
+
+                  {/* Opción 1: Gestión Técnicos */}
+                  <Link
+                    href="/GestionTecnicos/login"
+                    onClick={() => setSoftwareDropdownOpen(false)}
+                    className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/5 border border-transparent hover:border-amber-500/20 transition-all text-left"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <Wrench className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">
+                          Gestión Técnicos
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          Taller
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">
+                        SaaS para talleres de reparación, control de órdenes, clientes y stock.
+                      </p>
+                    </div>
+                  </Link>
+
+                  {/* Opción 2: JaTech Market */}
+                  <Link
+                    href="/market/login"
+                    onClick={() => setSoftwareDropdownOpen(false)}
+                    className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/5 border border-transparent hover:border-emerald-500/20 transition-all text-left"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <Store className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
+                          JaTech Market
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          Supermercado
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">
+                        Punto de Venta (POS), arqueo de cajas Z, stock pesable y tickets térmicos.
+                      </p>
+                    </div>
+                  </Link>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Resto de links */}
+          {navLinks.slice(2).map((link) => {
             const isAnchor = link.href.startsWith("#");
             const className = cn(
               "transition-colors py-1 focus:outline-none",
@@ -196,16 +334,40 @@ export const Navbar: React.FC<NavbarProps> = ({ activeCore, setActiveCore }) => 
               })}
             </div>
 
-            <div className="flex flex-col gap-2 mt-2">
-              <Link
-                href="/GestionTecnicos/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-2.5 rounded-xl text-xs font-semibold text-center text-amber-300 bg-amber-500/15 border border-amber-500/30 flex items-center justify-center gap-2 shadow-sm"
-              >
-                <Wrench className="w-4 h-4 text-amber-400" />
-                Portal Gestión de Técnicos & Talleres
-              </Link>
+            {/* Plataformas SaaS en Mobile */}
+            <div className="pt-2 border-t border-white/10 flex flex-col gap-2">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 px-1">
+                Softwares & SaaS JaTech
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Link
+                  href="/GestionTecnicos/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2.5 rounded-xl text-xs font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/30 flex items-center gap-2.5 hover:bg-amber-500/20 transition-all shadow-sm"
+                >
+                  <Wrench className="w-4 h-4 text-amber-400 shrink-0" />
+                  <div className="flex flex-col text-left">
+                    <span className="font-bold">Gestión Técnicos</span>
+                    <span className="text-[10px] text-slate-400">Taller y Reparaciones</span>
+                  </div>
+                </Link>
 
+                <Link
+                  href="/market/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2.5 rounded-xl text-xs font-semibold text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2.5 hover:bg-emerald-500/20 transition-all shadow-sm"
+                >
+                  <Store className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div className="flex flex-col text-left">
+                    <span className="font-bold">JaTech Market</span>
+                    <span className="text-[10px] text-slate-400">Supermercado y POS</span>
+                  </div>
+                </Link>
+              </div>
+            </div>
+
+            {/* Botones de Contacto en Mobile */}
+            <div className="flex flex-col gap-2 mt-2">
               <a
                 href="https://wa.me/5492646211278?text=Hola%20Jatech%2C%20quisiera%20hacer%20una%20consulta%20o%20pedir%20presupuesto."
                 target="_blank"

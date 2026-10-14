@@ -78,6 +78,7 @@ export interface Shop {
   name: string;
   owner_email: string;
   subscription_status: SubscriptionStatus;
+  subscription_module?: 'workshop' | 'market' | 'both';
   plan_price?: number;
   active?: boolean;
   mp_preapproval_id?: string;

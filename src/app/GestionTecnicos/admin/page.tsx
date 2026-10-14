@@ -42,10 +42,11 @@ export default function SuperAdminDashboardPage() {
   const [copiedShopId, setCopiedShopId] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
-  // Modal para agregar taller manualmente desde el Admin directamente a Supabase
+  // Modal para agregar taller o supermercado manualmente desde el Admin
   const [showAddModal, setShowAddModal] = useState(false);
   const [newShopName, setNewShopName] = useState('');
   const [newOwnerEmail, setNewOwnerEmail] = useState('');
+  const [newShopModule, setNewShopModule] = useState<'workshop' | 'market'>('workshop');
   const [modalLoading, setModalLoading] = useState(false);
 
   // Modal para eliminar taller permanentemente
@@ -171,6 +172,7 @@ export default function SuperAdminDashboardPage() {
 
     try {
       let saved = false;
+      const planPrice = newShopModule === 'market' ? 25000 : 20000;
       try {
         const res = await fetch('/api/admin/shops', {
           method: 'POST',
@@ -179,7 +181,8 @@ export default function SuperAdminDashboardPage() {
             name: cleanName,
             owner_email: cleanEmail,
             subscription_status: 'active',
-            plan_price: 20000,
+            subscription_module: newShopModule,
+            plan_price: planPrice,
             active: true,
           }),
         });
@@ -197,7 +200,8 @@ export default function SuperAdminDashboardPage() {
             name: cleanName,
             owner_email: cleanEmail,
             subscription_status: 'active',
-            plan_price: 20000,
+            subscription_module: newShopModule,
+            plan_price: planPrice,
             active: true,
           }]);
 
@@ -414,7 +418,22 @@ export default function SuperAdminDashboardPage() {
                   {filteredShops.map((shop) => (
                     <tr key={shop.id} className="hover:bg-surface-container-high transition-colors">
                       <td className="p-4 font-sans font-bold text-on-surface text-sm">
-                        {shop.name}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span>{shop.name}</span>
+                          {shop.subscription_module === 'market' ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                              Supermercado
+                            </span>
+                          ) : shop.subscription_module === 'both' ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                              Ambos
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                              Taller
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-4 text-on-surface-variant font-semibold">{shop.owner_email}</td>
                       <td className="p-4 text-on-surface-variant">
@@ -430,7 +449,7 @@ export default function SuperAdminDashboardPage() {
                           </span>
                         ) : shop.subscription_status === 'active' && shop.active ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold uppercase text-[10px]">
-                            <CheckCircle2 className="w-3 h-3" /> Pagado (${Number(shop.plan_price || 20000).toLocaleString('es-AR')})
+                            <CheckCircle2 className="w-3 h-3" /> Pagado (${Number(shop.plan_price || (shop.subscription_module === 'market' ? 25000 : 20000)).toLocaleString('es-AR')})
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold uppercase text-[10px]">
@@ -494,7 +513,10 @@ export default function SuperAdminDashboardPage() {
 
                         <button
                           onClick={() => {
-                            const link = `${window.location.origin}/GestionTecnicos/checkout?shop_id=${shop.id}`;
+                            const isMarket = shop.subscription_module === 'market';
+                            const link = isMarket
+                              ? `${window.location.origin}/market/checkout?shop_id=${shop.id}`
+                              : `${window.location.origin}/GestionTecnicos/checkout?shop_id=${shop.id}`;
                             navigator.clipboard.writeText(link);
                             setCopiedShopId(shop.id);
                             setTimeout(() => setCopiedShopId(null), 2000);
@@ -570,9 +592,39 @@ export default function SuperAdminDashboardPage() {
                   required
                   value={newOwnerEmail}
                   onChange={(e) => setNewOwnerEmail(e.target.value)}
-                  placeholder="dueno@taller.com"
+                  placeholder="dueno@negocio.com"
                   className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-2.5 text-xs text-on-surface font-mono"
                 />
+              </div>
+
+              <div>
+                <label className="block font-bold text-on-surface-variant uppercase mb-1">
+                  Módulo de la Plataforma *
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewShopModule('workshop')}
+                    className={`py-2 px-3 rounded-lg text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all ${
+                      newShopModule === 'workshop'
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'
+                        : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:bg-surface-container-high'
+                    }`}
+                  >
+                    <span>Taller ($20.000)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewShopModule('market')}
+                    className={`py-2 px-3 rounded-lg text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all ${
+                      newShopModule === 'market'
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold'
+                        : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:bg-surface-container-high'
+                    }`}
+                  >
+                    <span>Supermercado ($25.000)</span>
+                  </button>
+                </div>
               </div>
             </div>
 
